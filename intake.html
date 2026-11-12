@@ -105,7 +105,6 @@
   .btn[disabled]{opacity:.55;cursor:default}
   .ghost{background:none;border:0;font:inherit;color:var(--ink-soft);cursor:pointer;padding:10px 4px;font-weight:600}
   .ghost:hover{color:var(--ink)}
-  .enter{color:var(--ink-soft);font-size:.88rem}
   .save-later{margin-left:auto;color:var(--blue);font-size:.95rem}
   .msg{color:var(--err);font-weight:500;margin:14px 0 0;min-height:1.4em}
 
@@ -131,7 +130,6 @@
     .tiles,.tiles.narrow{grid-template-columns:1fr 1fr}
     .tile{padding:12px;min-height:52px;font-size:1rem}
     .tile .k{display:none}
-    .enter{display:none}
     .save-later{margin-left:0}
   }
   @media (max-width:380px){.tiles,.tiles.narrow{grid-template-columns:1fr}}
@@ -282,13 +280,12 @@ function go(d){
 function next(){ go(1); }
 function back(){ go(-1); }
 
-function nav({ canNext = true, label = 'Continue', optional = false, showBack = true } = {}){
+function nav({ canNext = true, label = 'Continue', optional = false, showBack = true, saveLater = true } = {}){
   return `<div class="nav">
     <button class="btn" type="button" data-act="next" ${canNext ? '' : 'disabled'}>${label} <span aria-hidden="true">→</span></button>
     ${optional ? '<button class="ghost" type="button" data-act="skip">Skip</button>' : ''}
     ${showBack ? '<button class="ghost" type="button" data-act="back">← Back</button>' : ''}
-    <span class="enter">or press Enter ↵</span>
-    <button class="ghost save-later" type="button" data-act="savelater">Save &amp; finish later</button>
+    ${saveLater ? '<button class="ghost save-later" type="button" data-act="savelater">Save &amp; finish later</button>' : ''}
   </div><p class="msg" id="msg" role="alert"></p>`;
 }
 const head = s => `${s.eyebrow ? `<p class="eyebrow">${esc(s.eyebrow)}</p>` : ''}
@@ -344,6 +341,24 @@ function syncSystems(){
   save();
 }
 
+function canProceed(s){
+  if (!s) return true;
+  switch (s.kind){
+    case 'single': return !!A[s.id];
+    case 'multi': return (A[s.id] || []).length > 0;
+    case 'grid': return s.rows.every(r => A[r.name]);
+    case 'systems': return (A.systems || []).some(r => (r.name || '').trim());
+    case 'fields': { const req = s.fields.filter(f => f.required);
+      return req.length ? req.every(f => (A[f.name] || '').trim()) : s.fields.some(f => (A[f.name] || '').trim()); }
+    case 'contact': return !!(A.name && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(A.email || '') && A.signer && A.consent);
+    default: return true;
+  }
+}
+function updateNext(){
+  const s = flow()[pos], n = $card.querySelector('[data-act="next"]');
+  if (n && s && !['welcome','done'].includes(s.kind) && !$card.querySelector('#sl_email') && !n.textContent.startsWith('Sending')) n.disabled = !canProceed(s);
+}
+
 function render(){
   const f = flow();
   if (pos >= f.length) pos = f.length - 1;
@@ -369,7 +384,7 @@ function render(){
     html = head(s) + `<div class="tiles ${s.narrow ? 'narrow' : ''}" role="group" aria-labelledby="q">` +
       optList(s.options).map(([v, d], i) => `<button type="button" class="tile" data-val="${esc(v)}" aria-pressed="${A[s.id] === v}">
         <span class="k">${letters[i] || ''}</span><span>${esc(v)}${d ? `<small>${esc(d)}</small>` : ''}</span></button>`).join('') +
-      `</div>` + nav({ canNext: !!A[s.id] || s.optional, optional: s.optional });
+      `</div>` + nav({ canNext: canProceed(s), optional: s.optional });
   }
 
   else if (s.kind === 'multi'){
@@ -377,7 +392,7 @@ function render(){
     html = head(s) + `<div class="tiles" role="group" aria-labelledby="q">` +
       optList(s.options).map(([v], i) => `<button type="button" class="tile" data-multi="${esc(v)}" aria-pressed="${cur.includes(v)}">
         <span class="k">${letters[i] || ''}</span><span>${esc(v)}</span></button>`).join('') +
-      `</div>` + nav({ canNext: cur.length > 0 || s.optional, optional: s.optional });
+      `</div>` + nav({ canNext: canProceed(s), optional: s.optional });
   }
 
   else if (s.kind === 'systems'){
@@ -390,14 +405,14 @@ function render(){
       <div id="rows">${A.systems.map(sysRow).join('')}</div>
       <button type="button" class="add-row" data-act="addrow">+ Add a system</button>
       <div class="totals" id="totals">${totalsText()}</div>` +
-      nav({ canNext: true, optional: true });
+      nav({ canNext: canProceed(s), optional: true });
   }
 
   else if (s.kind === 'grid'){
     const done = s.rows.every(r => A[r.name]);
     html = head(s) + s.rows.map(r => `<div class="row"><h2>${esc(r.label)}</h2><div class="tiles narrow">` +
         r.options.map(o => `<button type="button" class="tile" data-row="${r.name}" data-val="${esc(o)}" aria-pressed="${A[r.name] === o}"><span>${esc(o)}</span></button>`).join('') +
-      `</div></div>`).join('') + nav({ canNext: done || s.optional, optional: s.optional });
+      `</div></div>`).join('') + nav({ canNext: canProceed(s), optional: s.optional });
   }
 
   else if (s.kind === 'fields'){
@@ -406,7 +421,7 @@ function render(){
         ${fl.type === 'textarea'
           ? `<textarea id="f_${fl.name}" data-field="${fl.name}" ${fl.required ? 'required' : ''} placeholder="${esc(fl.placeholder || '')}">${esc(A[fl.name] || '')}</textarea>`
           : `<input type="text" id="f_${fl.name}" data-field="${fl.name}" ${fl.required ? 'required' : ''} autocomplete="${fl.auto || 'off'}" placeholder="${esc(fl.placeholder || '')}" value="${esc(A[fl.name] || '')}">`}
-      </div>`).join('') + `</div>` + nav({ optional: s.optional });
+      </div>`).join('') + `</div>` + nav({ canNext: canProceed(s), optional: s.optional });
   }
 
   else if (s.kind === 'contact'){
@@ -423,7 +438,7 @@ function render(){
       <div class="fld"><label for="c_source">How did you hear about us? <span class="hint">(optional)</span></label><input type="text" id="c_source" data-field="source" value="${esc(A.source || '')}"></div>
       <div class="hp" aria-hidden="true" style="position:absolute;left:-9999px"><label>Leave empty<input type="text" id="hp" tabindex="-1" autocomplete="off"></label></div>
       <label class="consent"><input type="checkbox" id="c_consent" ${A.consent ? 'checked' : ''}> I'm authorized to discuss this data on behalf of my company, and DataPair may contact me about it.</label>` +
-      nav({ label: 'Send my answers' });
+      nav({ label: 'Send my answers', canNext: false, saveLater: false });
   }
 
   else if (s.kind === 'done'){
@@ -595,6 +610,7 @@ $card.addEventListener('click', e => {
 
 $card.addEventListener('input', e => { if (e.target.matches('[data-field]')) syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
 $card.addEventListener('change', e => { if (e.target.id === 'c_consent') syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
+for (const ev of ['click', 'input', 'change']) $card.addEventListener(ev, () => setTimeout(updateNext));
 
 document.addEventListener('keydown', e => {
   const s = flow()[pos];
