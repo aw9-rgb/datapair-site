@@ -65,7 +65,7 @@ async function load(){
     const s = byIntake[x.id];
     const badge = x.type === 'seller-v2' ? (s ? '<span class="badge yes">Signed</span>' : '<span class="badge no">Not signed yet</span>') : '';
     const head = `<h3>${esc(x.company)} — ${esc(x.name)}${badge}</h3>
-      <div class="meta">${new Date(x.createdAt).toLocaleString()} · ${esc(x.industry)}${x.employees ? ' · ' + esc(x.employees) + ' employees' : ''}</div>`;
+      <div class="meta">${new Date(x.createdAt).toLocaleString()} · ${esc(x.industry)}${x.employees ? ' · ' + esc(x.employees) + ' full-time employees' : ''}</div>`;
     if (x.type === 'seller-v2') return `<div class="card">${head}
       <dl><dt>Email</dt><dd><a href="mailto:${esc(x.email)}">${esc(x.email)}</a></dd><dt>Phone</dt><dd>${esc(x.phone) || '—'}</dd></dl>
       <details><summary>All answers</summary><dl>${(x.summary || []).map(([q, a]) => `<dt>${esc(q)}</dt><dd>${esc(a)}</dd>`).join('')}</dl></details></div>`;

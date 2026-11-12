@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     try { intakePdf = await buildIntakePdf(entry); } catch (e) { console.error('intake pdf', e); }
     await sendMail({
       to: notifyTo(), replyTo: entry.email,
-      subject: `New data intake: ${entry.company} (${entry.industry}${entry.employees ? ', ' + entry.employees + ' employees' : ''})`,
+      subject: `New data intake: ${entry.company} (${entry.industry}${entry.employees ? ', ' + entry.employees + ' full-time employees' : ''})`,
       text: `The full intake is attached as a PDF. You'll get a second email with the signed agreement when they sign.\n\n`
         + lines.join('\n') + `\n\nReceived ${entry.createdAt}\nTheir signing link: ${signUrl}`,
       attachments: intakePdf ? [{ filename: intakeFilename(entry), content: intakePdf, contentType: 'application/pdf' }] : [],
