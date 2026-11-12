@@ -42,8 +42,8 @@
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const k = document.getElementById('k');
 try { k.value = sessionStorage.getItem('dpk') || ''; } catch {}
-async function pdf(id, name){
-  const r = await fetch('/api/submissions?pdf=' + encodeURIComponent(id), { headers: { 'x-admin-key': k.value } });
+async function pdf(id, name, kind){
+  const r = await fetch('/api/submissions?' + (kind || 'pdf') + '=' + encodeURIComponent(id), { headers: { 'x-admin-key': k.value } });
   if (!r.ok) return alert('Could not load that PDF.');
   const url = URL.createObjectURL(await r.blob());
   const a = Object.assign(document.createElement('a'), { href: url, download: name || 'DataPair Agreement.pdf' }); a.click();
@@ -59,7 +59,8 @@ async function load(){
   const sigTable = sigs.length ? `<h2 class="sec">Signed agreements</h2><table><thead><tr><th>Company</th><th>Signer</th><th>Signed</th><th></th></tr></thead><tbody>` +
     sigs.map(s => `<tr><td>${esc(s.company)}</td><td>${esc(s.name)}, ${esc(s.title)}<br><a href="mailto:${esc(s.email)}">${esc(s.email)}</a></td>
       <td>${new Date(s.signedAt).toLocaleString()}<br><small>IP ${esc(s.ip)} · v${esc(s.version)}</small></td>
-      <td><button class="link" onclick="pdf('${esc(s.id)}','DataPair Agreement - ${esc(s.company).replace(/'/g,'')}.pdf')">Download PDF</button></td></tr>`).join('') + `</tbody></table>` : '';
+      <td><button class="link" onclick="pdf('${esc(s.id)}','DataPair Agreement - ${esc(s.company).replace(/'/g,'')}.pdf')">Agreement</button><br>
+        <button class="link" onclick="pdf('${esc(s.id)}','Letter of Authorization - ${esc(s.company).replace(/'/g,'')}.pdf','loa')">Letter of Authorization</button></td></tr>`).join('') + `</tbody></table>` : '';
   const cards = j.items.map(x => {
     const s = byIntake[x.id];
     const badge = x.type === 'seller-v2' ? (s ? '<span class="badge yes">Signed</span>' : '<span class="badge no">Not signed yet</span>') : '';

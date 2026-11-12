@@ -1,5 +1,5 @@
 // GET /api/submissions — returns all intake submissions and signed agreements.
-// GET /api/submissions?pdf=<signature id> — returns that signed PDF.
+// GET /api/submissions?pdf=<signature id> — returns that signed PDF (?loa=<id> for the Letter of Authorization).
 // Requires the ADMIN_KEY environment variable, sent as the "x-admin-key" header.
 import { redis, parse } from '../lib/store.js';
 
@@ -10,8 +10,9 @@ export default async function handler(req, res) {
   }
   res.setHeader('Cache-Control', 'no-store');
 
-  if (req.query?.pdf) {
-    const b64 = await redis.get(`datapair:pdf:${String(req.query.pdf).slice(0, 60)}`);
+  if (req.query?.pdf || req.query?.loa) {
+    const key = req.query.loa ? `datapair:loa:${String(req.query.loa).slice(0, 60)}` : `datapair:pdf:${String(req.query.pdf).slice(0, 60)}`;
+    const b64 = await redis.get(key);
     if (!b64) return res.status(404).json({ error: 'Not found.' });
     res.setHeader('Content-Type', 'application/pdf');
     return res.status(200).send(Buffer.from(b64, 'base64'));

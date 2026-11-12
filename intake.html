@@ -229,6 +229,9 @@ const STEPS = [
   { id:'buyers_names', kind:'fields', eyebrow:'Rights & restrictions', title:'Which buyers have you talked with?', when:a=>a.buyers==='Yes',
     sub:'We\'ll list them as excluded in our agreement, so you owe us nothing on deals with them.',
     fields:[{name:'buyers_names', label:'Company names', type:'text', required:true, placeholder:'e.g. Mercor (got a quote in October)'}] },
+  { id:'skip_buyers', kind:'fields', eyebrow:'Rights & restrictions', optional:true, title:'Any buyers we should not contact?',
+    sub:'We submit you to vetted AI data buyers such as Mercor, Handshake AI, Scale AI, micro1 and SourceX. Name any company you\'d like us to skip, such as a competitor.',
+    fields:[{name:'skip_buyers', label:'Companies to skip', type:'text', placeholder:'e.g. none, or a company name'}] },
   { id:'never', kind:'fields', eyebrow:'Rights & restrictions', optional:true, title:'Is there anything you would never want shared?',
     fields:[{name:'never', label:'Off-limits data', type:'textarea', placeholder:'e.g. payroll, our largest client\'s files, the founders\' inboxes'}] },
 
@@ -374,7 +377,7 @@ function render(){
       <h1 id="q" tabindex="-1">Let's see what your business data could be worth.</h1>
       <p class="sub">Answer some quick questions, mostly taps. It takes about 5 minutes.</p>
       <ul><li>No cost and no commitment</li><li>You don't send any files, passwords or customer records</li>
-        <li>Your answers stay private. We never share your name without your OK</li></ul>
+        <li>We handle the buyers for you. Your details go only to vetted buyers, under confidentiality</li></ul>
       <div class="nav"><button class="btn" type="button" data-act="next">${started ? 'Continue where you left off' : 'Get started'} <span aria-hidden="true">→</span></button>
       ${started ? '<button class="ghost" type="button" data-act="restart">Start over</button>' : ''}</div>
       ${started ? '<p class="resume">We saved your answers on this device.</p>' : ''}</div>`;
@@ -446,7 +449,7 @@ function render(){
       <h1 id="q" tabindex="-1">Thanks${A.name ? ', ' + esc(A.name.split(' ')[0]) : ''}. We've got it.</h1>
       <p class="sub">We'll review your answers and reply to <b>${esc(A.email || 'you')}</b> within two business days.</p>
       <div class="next-step"><h2>Next: sign the agreement</h2>
-        <p>A short agreement lets us start representing your data to buyers. Nothing up front, you pay only if a buyer pays you, and you approve every deal.</p>
+        <p>One signature lets us submit you to buyers and negotiate for you. Nothing up front, you pay only if a buyer pays you, and you choose the final deal.</p>
         ${signUrl ? `<a class="btn" href="${esc(signUrl)}">Review &amp; sign the agreement <span aria-hidden="true">→</span></a>` : ''}
         <p class="later">Prefer to wait? We'll include the link with your results.</p></div>`;
   }

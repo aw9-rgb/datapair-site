@@ -33,6 +33,7 @@
   .doc h3:first-child{margin-top:0}
   .doc p{margin:0 0 8px;color:#1B2333}
   .doc .intro{color:var(--ink-soft);font-size:.92rem}
+  .doc.loa{max-height:none;margin-top:20px;border-left:4px solid var(--green-bright)}
   .scroll-hint{font-size:.9rem;color:var(--ink-soft);margin:8px 0 0}
   .dl{display:inline-block;margin-top:6px;font-size:.95rem;color:var(--blue);background:none;border:0;padding:0;font:inherit;cursor:pointer;text-decoration:underline}
   form{margin-top:32px;background:#fff;border:1.5px solid var(--rule);border-radius:8px;padding:26px 28px}
@@ -70,7 +71,7 @@
 <main id="main">
   <p class="eyebrow">Last step</p>
   <h1>Review and sign your agreement</h1>
-  <p class="lead">This lets DataPair represent your data to buyers. Nothing up front, and you approve every deal.</p>
+  <p class="lead">One signature covers two documents: the agreement for DataPair to represent your data, and a one-page Letter of Authorization we show to buyers. Nothing up front, and you choose the final deal.</p>
   <div id="agreement"><p class="lead">Loading the agreement…</p></div>
 
   <form id="f" novalidate hidden>
@@ -109,7 +110,12 @@ $('agreement').innerHTML = `
     ${A.sections.map(([h, ps]) => `<h3>${esc(h)}</h3>${ps.map(p => `<p>${esc(p)}</p>`).join('')}`).join('')}
     <h3>DataPair signature</h3><p>${esc(A.datapair.name)}, ${esc(A.datapair.title)}, DataPair LLC (signed electronically)</p>
   </div>
-  <p class="scroll-hint">Scroll to read the full agreement. You'll get a signed PDF copy by email right after signing.</p>`;
+  <p class="scroll-hint">Scroll to read the full agreement.</p>
+  <div class="doc loa" tabindex="0" aria-label="Letter of Authorization">
+    <h3>${esc(A.loa.title)}</h3><p class="intro">Shown to buyers so they know we're authorized to speak for you. It doesn't include our fees.</p>
+    ${A.loa.body.map(p => `<p>${esc(p.replace('{company}', 'Your company'))}</p>`).join('')}
+  </div>
+  <p class="scroll-hint">You'll get signed PDF copies of both by email right after signing.</p>`;
 $('consent-text').textContent = A.consent;
 
 if (A.alreadySigned){
@@ -133,14 +139,16 @@ $('f').addEventListener('submit', async e => {
     const r = await fetch('/api/sign', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'Signing failed.');
-    let url = '';
-    if (j.pdf) { const bin = atob(j.pdf), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-      url = URL.createObjectURL(new Blob([u], { type:'application/pdf' })); }
+    const blobUrl = b64 => { if (!b64) return ''; const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      return URL.createObjectURL(new Blob([u], { type:'application/pdf' })); };
+    const url = blobUrl(j.pdf), loaUrl = blobUrl(j.loa);
     $('main').innerHTML = `<div class="done"><div class="done-mark" aria-hidden="true"></div>
       <h1 tabindex="-1" id="dh">Signed. Welcome to DataPair, ${esc(body.name.split(' ')[0])}.</h1>
-      <p class="lead">${j.emailed ? `A signed copy is on its way to <b>${esc(body.email)}</b>.` : 'Download your signed copy below for your records.'}
-      We'll start matching your data with buyers and be in touch with next steps.</p>
-      ${url ? `<a class="btn" href="${url}" download="${esc(j.filename || 'DataPair Agreement.pdf')}">Download signed PDF</a>` : ''}</div>`;
+      <p class="lead">${j.emailed ? `Signed copies are on their way to <b>${esc(body.email)}</b>.` : 'Download your signed copies below for your records.'}
+      From here we'll submit you to vetted buyers and handle the back-and-forth, then come back to you with the best offers.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+      ${url ? `<a class="btn" href="${url}" download="${esc(j.filename || 'DataPair Agreement.pdf')}">Download agreement</a>` : ''}
+      ${loaUrl ? `<a class="btn" style="background:#fff;color:var(--blue);border:1.5px solid var(--blue)" href="${loaUrl}" download="${esc(j.loaFilename || 'Letter of Authorization.pdf')}">Download Letter of Authorization</a>` : ''}</div></div>`;
     $('dh').focus(); window.scrollTo({ top: 0 });
   } catch (err) { msg.textContent = err.message + ' If it keeps happening, email ari@datapair.ai.'; btn.disabled = false; btn.textContent = 'Sign agreement'; }
 });
