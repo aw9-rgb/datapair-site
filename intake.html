@@ -65,6 +65,35 @@
   .consent{display:flex;gap:12px;align-items:flex-start;font-size:.97rem;color:var(--ink-soft);margin-top:6px;cursor:pointer}
   .consent input{margin-top:5px;width:18px;height:18px;accent-color:var(--blue);flex:none}
 
+  .card.wide{max-width:1120px}
+  .quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 18px}
+  .quick span{font-weight:600;font-size:.92rem;margin-right:4px}
+  .quick .chip{font-size:.88rem;padding:5px 11px}
+  .sys-head,.sys{display:grid;grid-template-columns:1.25fr 1.25fr .95fr .95fr 1.05fr .9fr 26px;gap:8px;align-items:start}
+  .sys-head{font-size:.8rem;font-weight:700;color:var(--ink-soft);padding:0 12px 6px;text-transform:uppercase;letter-spacing:.04em}
+  .sys{background:#fff;border:1.5px solid var(--rule);border-radius:9px;padding:10px 12px;margin:0 0 8px}
+  .sys .c{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .sys .c > label{display:none;font-size:.8rem;font-weight:700;color:var(--ink-soft)}
+  .sys .what{grid-column:1/-2}
+  .sys .what > label{display:block}
+  .sys input[type=text],.sys input[type=month],.sys select{font:inherit;font-size:.95rem;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:6px;padding:8px 9px;width:100%;min-width:0}
+  .sys input:disabled{background:var(--paper);color:var(--ink-soft)}
+  .sys .pair{display:flex;gap:4px}.sys .pair input{flex:1}.sys .pair select{width:auto;flex:none;padding:8px 4px}
+  .sys .now{display:flex!important;gap:6px;align-items:center;font-size:.82rem;font-weight:500;color:var(--ink-soft);cursor:pointer}
+  .sys .now input{width:15px;height:15px;accent-color:var(--blue);margin:0}
+  .sys .rm{background:none;border:0;font-size:1.4rem;line-height:1;color:var(--ink-soft);cursor:pointer;padding:6px 0;align-self:start}
+  .sys .rm:hover{color:var(--err)}
+  .add-row{font:inherit;font-weight:600;color:var(--blue);background:#fff;border:1.5px dashed var(--line);border-radius:9px;padding:12px;width:100%;cursor:pointer}
+  .add-row:hover{border-color:var(--blue)}
+  .totals{margin:16px 0 0;padding:14px 16px;background:var(--green-tint);border:1.5px solid var(--green-bright);border-radius:9px;color:var(--ink)}
+  @media (max-width:900px){
+    .sys-head{display:none}
+    .sys{grid-template-columns:1fr 1fr;position:relative;padding:14px}
+    .sys .c > label{display:block}
+    .sys .what{grid-column:1/-1}
+    .sys .rm{position:absolute;top:6px;right:10px}
+    .sys .name{padding-right:22px}
+  }
   .tool-head{display:flex;align-items:center;gap:12px;margin:0 0 6px}
   .tool-head .pill{font-size:.85rem;color:var(--ink-soft)}
   .row{margin:0 0 22px}
@@ -127,7 +156,7 @@ const KEY = 'datapair-intake-v2';
 const $card = document.getElementById('card');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const TOOL_GROUPS = [
+const TOOL_GROUPS = [  // [group / default 'used for', tools]
   ['Email', ['Gmail / Google Workspace', 'Outlook / Microsoft 365', 'Zoho Mail']],
   ['Chat & meetings', ['Slack', 'Microsoft Teams', 'Zoom', 'Google Meet']],
   ['Files & documents', ['Google Drive', 'OneDrive / SharePoint', 'Dropbox', 'Box']],
@@ -139,6 +168,9 @@ const TOOL_GROUPS = [
   ['Industry & operations', ['ServiceTitan', 'Procore', 'Clio', 'Shopify', 'Practice management / EHR', 'Booking / reservation system']],
   ['Code & design', ['GitHub', 'GitLab', 'Figma', 'AutoCAD / Revit']],
 ];
+const USE_FOR = { 'Email':'Email', 'Chat & meetings':'Team chat & meetings', 'Files & documents':'Documents & files',
+  'Sales & customers (CRM)':'Sales & customers', 'Accounting & finance':'Accounting & invoicing', 'Projects & knowledge':'Projects & procedures',
+  'Customer support':'Customer support tickets', 'HR & payroll':'HR & payroll', 'Industry & operations':'Operations', 'Code & design':'Code & design' };
 
 // Each step: id, kind, title, sub, options, optional, when(answers)
 const STEPS = [
@@ -175,15 +207,8 @@ const STEPS = [
     sub:'Count every employee mailbox, current and former, if they\'re still kept.', narrow:true,
     options:['Under 10','10–24','25–99','100–499','500+','Not sure'] },
 
-  { id:'tools', kind:'tools', eyebrow:'Your systems', title:'Which tools does your business use?',
-    sub:'Tap everything that applies. The more systems you have, the more your data is usually worth.' },
-  // tool detail steps are inserted dynamically after "tools"
-
-  { id:'history', kind:'single', eyebrow:'Your data', title:'Overall, how far back do your records go?', narrow:true,
-    options:['Less than 2 years','2–5 years','5–10 years','10+ years'] },
-  { id:'size', kind:'single', eyebrow:'Your data', title:'Roughly how much data do you store in total?',
-    sub:'A rough guess is fine. If you have no idea, pick "Not sure."', narrow:true,
-    options:['Under 100 GB','100 GB–1 TB','1–10 TB','More than 10 TB','Not sure'] },
+  { id:'systems', kind:'systems', eyebrow:'Your systems', optional:true, title:'Your systems and data',
+    sub:'One row per system your business runs on. Rough numbers are fine, and anything you skip can be filled in later. This is the most valuable part of your review.' },
   { id:'language', kind:'single', eyebrow:'Your data', title:'What language are most of your records in?', narrow:true,
     options:['English','Mostly English, some other','Mainly another language'] },
   { id:'linked', kind:'single', eyebrow:'Your data', optional:true, title:'Do your records connect across systems?',
@@ -228,14 +253,12 @@ let pos = 0;         // index into active flow
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.A) { A = s.A; pos = s.pos || 0; draft = s.draft || null; } } catch {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify({A, pos, draft})); } catch {} };
 
-const toolDetailStep = t => ({ id:'tool:'+t, kind:'tool', tool:t, eyebrow:'Your systems', title:t });
 function flow(){
   const out = [];
   for (const s of STEPS){
     if (s.when && !s.when(A)) continue;
     if (s.id === 'location' && !A.country) continue;
     out.push(s);
-    if (s.kind === 'tools') for (const t of (A.tools || [])) out.push(toolDetailStep(t));
   }
   return out;
 }
@@ -274,11 +297,59 @@ const head = s => `${s.eyebrow ? `<p class="eyebrow">${esc(s.eyebrow)}</p>` : ''
 const optList = o => o.map(x => Array.isArray(x) ? x : [x, '']);
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+const COMMON = ['Gmail / Google Workspace','Outlook / Microsoft 365','Slack','Microsoft Teams','Zoom','Google Drive','OneDrive / SharePoint',
+  'Dropbox','Salesforce','HubSpot','QuickBooks','NetSuite','Zendesk','Jira','Notion','ServiceTitan'];
+const QUICK = TOOL_GROUPS.flatMap(([g, list]) => list.map(t => [t, USE_FOR[g] || ''])).filter(([t]) => COMMON.includes(t));
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ym = v => { if (!v) return ''; const [y, m] = v.split('-'); return m ? `${months[+m - 1]} ${y}` : y; };
+function sysRow(r, i){
+  const opt = (v, cur) => `<option ${v === cur ? 'selected' : ''}>${v}</option>`;
+  return `<div class="sys" data-i="${i}">
+    <div class="c name"><label>System</label><input type="text" data-k="name" value="${esc(r.name || '')}" placeholder="e.g. QuickBooks"></div>
+    <div class="c use"><label>What you use it for</label><input type="text" data-k="use" value="${esc(r.use || '')}" placeholder="e.g. Invoicing"></div>
+    <div class="c size"><label>Approx. size</label><span class="pair"><input type="text" inputmode="decimal" data-k="size" value="${esc(r.size || '')}" placeholder="0">
+      <select data-k="unit">${['GB','TB','MB'].map(u => opt(u, r.unit || 'GB')).join('')}</select></span></div>
+    <div class="c from"><label>From</label><input type="month" data-k="from" value="${esc(r.from || '')}" placeholder="YYYY-MM"></div>
+    <div class="c to"><label>To</label><input type="month" data-k="to" value="${esc(r.current ? '' : (r.to || ''))}" ${r.current ? 'disabled' : ''} placeholder="YYYY-MM">
+      <label class="now"><input type="checkbox" data-k="current" ${r.current ? 'checked' : ''}> Still in use</label></div>
+    <div class="c exp"><label>Can you export it?</label><select data-k="export"><option value="">—</option>${['Yes','With help','No','Not sure'].map(v => opt(v, r.export)).join('')}</select></div>
+    <button type="button" class="rm" data-rm="${i}" aria-label="Remove ${esc(r.name || 'this system')}">×</button>
+    <div class="c what"><label>What's in it? <span class="hint">(optional)</span></label><input type="text" data-k="what" value="${esc(r.what || '')}" placeholder="e.g. 4,800 invoices, client emails since 2018"></div>
+  </div>`;
+}
+const toGB = r => { const n = parseFloat(String(r.size || '').replace(/,/g, '')); if (!(n > 0)) return 0; return r.unit === 'TB' ? n * 1000 : r.unit === 'MB' ? n / 1000 : n; };
+function totals(){
+  const rows = (A.systems || []).filter(r => (r.name || '').trim());
+  const gb = rows.reduce((t, r) => t + toGB(r), 0);
+  const now = new Date().toISOString().slice(0, 7);
+  const froms = rows.map(r => r.from).filter(Boolean).sort();
+  const tos = rows.map(r => r.current ? now : r.to).filter(Boolean).sort();
+  return { count: rows.length, gb, from: froms[0] || '', to: tos[tos.length - 1] || '' };
+}
+const fmtSize = gb => gb >= 1000 ? (gb / 1000).toFixed(gb >= 10000 ? 0 : 1) + ' TB' : gb >= 1 ? Math.round(gb) + ' GB' : gb > 0 ? Math.round(gb * 1000) + ' MB' : '';
+function totalsText(){
+  const t = totals(); if (!t.count) return 'Add your systems above. We\'ll total up your data as you go.';
+  const parts = [`<b>${t.count}</b> system${t.count === 1 ? '' : 's'}`];
+  if (t.gb) parts.push(`about <b>${fmtSize(t.gb)}</b> of data`);
+  if (t.from) parts.push(`records from <b>${ym(t.from)}</b> to <b>${t.to === new Date().toISOString().slice(0, 7) ? 'today' : ym(t.to)}</b>`);
+  return parts.join(' · ');
+}
+function syncSystems(){
+  $card.querySelectorAll('.sys').forEach(row => {
+    const r = A.systems[+row.dataset.i]; if (!r) return;
+    row.querySelectorAll('[data-k]').forEach(el => { r[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim(); });
+    const to = row.querySelector('[data-k="to"]'); to.disabled = !!r.current; if (r.current) to.value = '';
+  });
+  const t = document.getElementById('totals'); if (t) t.innerHTML = totalsText();
+  save();
+}
+
 function render(){
   const f = flow();
   if (pos >= f.length) pos = f.length - 1;
   const s = f[pos];
   setProgress(f);
+  $card.classList.toggle('wide', s.kind === 'systems');
   let html = '';
 
   if (s.kind === 'welcome'){
@@ -309,29 +380,17 @@ function render(){
       `</div>` + nav({ canNext: cur.length > 0 || s.optional, optional: s.optional });
   }
 
-  else if (s.kind === 'tools'){
-    const cur = A.tools || [];
-    html = head(s) + TOOL_GROUPS.map(([g, list]) => `<div class="group"><h2>${esc(g)}</h2><div class="chips">` +
-        list.map(t => `<button type="button" class="chip" data-tool="${esc(t)}" aria-pressed="${cur.includes(t)}">${esc(t)}</button>`).join('') +
-      `</div></div>`).join('') +
-      `<div class="fld"><label for="tools_other">Anything else? <span class="hint">(separate with commas)</span></label>
-        <input type="text" id="tools_other" value="${esc(A.tools_other || '')}" placeholder="e.g. a custom database, an industry app"></div>` +
-      nav({ canNext: true });
-  }
-
-  else if (s.kind === 'tool'){
-    const d = (A.tool_detail || {})[s.tool] || {};
-    const rows = [
-      ['years', 'How many years of records are in it?', ['Under 2','2–5','5–10','10+']],
-      ['volume', 'How much is in it?', ['A little','A fair amount','A lot','Not sure']],
-      ['export', 'Could you export it or give access?', ['Yes, easily','With some help','Not sure']],
-    ];
-    const tools = A.tools || [], n = tools.indexOf(s.tool) + 1;
-    html = `<p class="eyebrow">Your systems · tool ${n} of ${tools.length}</p>
-      <h1 id="q" tabindex="-1">${esc(s.tool)}</h1><p class="sub">Three quick taps. Rough answers are fine.</p>` +
-      rows.map(([k, label, opts]) => `<div class="row"><h2>${esc(label)}</h2><div class="tiles narrow">` +
-        opts.map(o => `<button type="button" class="tile" data-tk="${k}" data-val="${esc(o)}" aria-pressed="${d[k] === o}"><span>${esc(o)}</span></button>`).join('') +
-      `</div></div>`).join('') + nav({ canNext: !!(d.years && d.volume && d.export) });
+  else if (s.kind === 'systems'){
+    if (!Array.isArray(A.systems)) A.systems = [];
+    const have = new Set(A.systems.map(r => (r.name || '').toLowerCase()));
+    html = head(s) +
+      `<div class="quick"><span>Quick add:</span>` + QUICK.map(([t]) =>
+        `<button type="button" class="chip" data-add="${esc(t)}" aria-pressed="${have.has(t.toLowerCase())}">${esc(t)}</button>`).join('') + `</div>
+      <div class="sys-head" aria-hidden="true"><span>System</span><span>What you use it for</span><span>Approx. size</span><span>From</span><span>To</span><span>Can you export it?</span><span></span></div>
+      <div id="rows">${A.systems.map(sysRow).join('')}</div>
+      <button type="button" class="add-row" data-act="addrow">+ Add a system</button>
+      <div class="totals" id="totals">${totalsText()}</div>` +
+      nav({ canNext: true, optional: true });
   }
 
   else if (s.kind === 'grid'){
@@ -379,8 +438,8 @@ function render(){
 
   $card.innerHTML = html;
   $card.style.animation = 'none'; void $card.offsetWidth; $card.style.animation = '';
-  const first = $card.querySelector('input[data-field], textarea[data-field], #tools_other');
-  if (first && s.kind !== 'tools') first.focus(); else $card.querySelector('#q')?.focus({ preventScroll: true });
+  const first = $card.querySelector('input[data-field], textarea[data-field]');
+  if (first) first.focus(); else $card.querySelector('#q')?.focus({ preventScroll: true });
   window.scrollTo({ top: 0 });
 }
 
@@ -417,7 +476,7 @@ async function sendLink(){
 
 function syncFields(){
   $card.querySelectorAll('[data-field]').forEach(el => { A[el.dataset.field] = el.value.trim(); });
-  const o = document.getElementById('tools_other'); if (o) A.tools_other = o.value.trim();
+  if ($card.querySelector('.sys')) syncSystems();
   const c = document.getElementById('c_consent'); if (c) A.consent = c.checked;
   save();
 }
@@ -432,7 +491,6 @@ function validateAndNext(){
     const miss = s.fields.find(fl => fl.required && !A[fl.name]);
     if (miss){ msg('Please fill in: ' + miss.label + '.'); document.getElementById('f_' + miss.name)?.focus(); return; }
   }
-  if (s.kind === 'tools' && !(A.tools || []).length && !A.tools_other){ msg('Pick at least one tool, or type yours in the box.'); return; }
   if (s.kind === 'contact'){ submit(); return; }
   next();
 }
@@ -447,11 +505,17 @@ async function submit(){
   const f = flow(), summary = [];
   for (const s of f){
     if (['welcome','done','contact'].includes(s.kind)) continue;
-    if (s.kind === 'tool'){
-      const d = (A.tool_detail || {})[s.tool] || {};
-      summary.push(['Tool: ' + s.tool, `${d.years || '?'} yrs · ${d.volume || '?'} · export: ${d.export || '?'}`]); continue;
+    if (s.kind === 'systems'){
+      const rows = (A.systems || []).filter(r => (r.name || '').trim());
+      if (!rows.length){ summary.push(['Systems', 'Not filled in yet']); continue; }
+      const t = totals();
+      summary.push(['Systems (total)', [`${t.count} systems`, t.gb ? `about ${fmtSize(t.gb)}` : 'size not given',
+        t.from ? `${ym(t.from)} to ${t.to === new Date().toISOString().slice(0, 7) ? 'today' : ym(t.to)}` : 'dates not given'].join(' · ')]);
+      rows.forEach(r => summary.push(['System: ' + r.name, [r.use, toGB(r) ? fmtSize(toGB(r)) : '',
+        (r.from || r.to || r.current) ? `${ym(r.from) || '?'} – ${r.current ? 'present' : (ym(r.to) || '?')}` : '',
+        r.export ? 'export: ' + r.export : '', r.what].filter(Boolean).join(' · ') || '—']));
+      continue;
     }
-    if (s.kind === 'tools'){ summary.push(['Tools', [...(A.tools || []), ...(A.tools_other ? [A.tools_other] : [])].join(', ')]); continue; }
     if (s.kind === 'grid'){ s.rows.forEach(r => summary.push([r.label, A[r.name] || '—'])); continue; }
     if (s.kind === 'fields'){ s.fields.forEach(fl => summary.push([fl.label, A[fl.name] || '—'])); continue; }
     const v = A[s.id]; summary.push([s.title, Array.isArray(v) ? v.join(', ') : (v || '—')]);
@@ -460,7 +524,7 @@ async function submit(){
 
   const industry = A.industry === 'Other' ? (A.industry_other || 'Other') : A.industry;
   const payload = { type:'seller-v2', name:A.name, title:A.title || '', company:A.company, email:A.email, phone:A.phone || '',
-    industry, span:A.history || '', employees:A.employees || '', description:A.does || '',
+    industry, span:(() => { const t = totals(); return t.from ? `${ym(t.from)} to ${ym(t.to)}` : ''; })(), employees:A.employees || '', description:A.does || '',
     personal:(A.sensitive || []).join(', '), ownership:A.ownership || '', source:A.source || '',
     consent:'yes', website:document.getElementById('hp')?.value || '', summary, answers:A };
   try{
@@ -488,15 +552,18 @@ $card.addEventListener('click', e => {
   if (b.dataset.act === 'sendlink'){ sendLink(); return; }
   if (b.dataset.act === 'resume'){ render(); return; }
 
-  if (b.dataset.tk){ // tool detail row
-    A.tool_detail = A.tool_detail || {}; const d = A.tool_detail[s.tool] = A.tool_detail[s.tool] || {};
-    d[b.dataset.tk] = b.dataset.val; save();
-    b.parentElement.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed', t === b));
-    const ready = d.years && d.volume && d.export;
-    $card.querySelector('[data-act="next"]').disabled = !ready;
-    if (ready) autoAdvance();
+  if (b.dataset.act === 'addrow' || b.dataset.add){
+    syncFields();
+    const name = b.dataset.add || '';
+    if (name && A.systems.some(r => (r.name || '').toLowerCase() === name.toLowerCase())) return;
+    const use = (QUICK.find(([t]) => t === name) || [])[1] || '';
+    A.systems.push({ name, use, unit: 'GB', current: !!name }); save(); render();
+    const rows = $card.querySelectorAll('.sys'), last = rows[rows.length - 1];
+    last?.querySelector(name ? '[data-k="size"]' : '[data-k="name"]')?.focus();
+    last?.scrollIntoView({ block: 'nearest' });
     return;
   }
+  if (b.dataset.rm !== undefined){ syncFields(); A.systems.splice(+b.dataset.rm, 1); save(); render(); return; }
   if (b.dataset.row){
     A[b.dataset.row] = b.dataset.val; save();
     b.parentElement.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed', t === b));
@@ -505,14 +572,6 @@ $card.addEventListener('click', e => {
       $card.querySelector('[data-act="next"]').disabled = !(ready || s.optional);
       if (ready) autoAdvance();
     }
-    return;
-  }
-  if (b.dataset.tool){
-    const t = b.dataset.tool, cur = new Set(A.tools || []);
-    cur.has(t) ? cur.delete(t) : cur.add(t);
-    // keep the order of the master list
-    A.tools = TOOL_GROUPS.flatMap(g => g[1]).filter(x => cur.has(x)); save();
-    b.setAttribute('aria-pressed', cur.has(t)); msg('');
     return;
   }
   if (b.dataset.multi !== undefined){
@@ -534,12 +593,12 @@ $card.addEventListener('click', e => {
   }
 });
 
-$card.addEventListener('input', e => { if (e.target.matches('[data-field], #tools_other')) syncFields(); });
-$card.addEventListener('change', e => { if (e.target.id === 'c_consent') syncFields(); });
+$card.addEventListener('input', e => { if (e.target.matches('[data-field]')) syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
+$card.addEventListener('change', e => { if (e.target.id === 'c_consent') syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
 
 document.addEventListener('keydown', e => {
   const s = flow()[pos];
-  if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON'){
+  if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON' && !e.target.closest('.sys')){
     e.preventDefault();
     const n = $card.querySelector('[data-act="next"], [data-act="sendlink"]'); if (n && !n.disabled) n.click();
     return;
