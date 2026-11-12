@@ -77,6 +77,7 @@
   .ghost{background:none;border:0;font:inherit;color:var(--ink-soft);cursor:pointer;padding:10px 4px;font-weight:600}
   .ghost:hover{color:var(--ink)}
   .enter{color:var(--ink-soft);font-size:.88rem}
+  .save-later{margin-left:auto;color:var(--blue);font-size:.95rem}
   .msg{color:var(--err);font-weight:500;margin:14px 0 0;min-height:1.4em}
 
   .welcome ul{list-style:none;padding:0;margin:0 0 30px;display:grid;gap:12px}
@@ -102,6 +103,7 @@
     .tile{padding:12px;min-height:52px;font-size:1rem}
     .tile .k{display:none}
     .enter{display:none}
+    .save-later{margin-left:0}
   }
   @media (max-width:380px){.tiles,.tiles.narrow{grid-template-columns:1fr}}
 </style>
@@ -221,9 +223,10 @@ const STEPS = [
 
 let A = {};          // answers
 let signUrl = '';    // private signing link, set after submit
+let draft = null;    // {id, t} when working from a save-and-finish-later link
 let pos = 0;         // index into active flow
-try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.A) { A = s.A; pos = s.pos || 0; } } catch {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify({A, pos})); } catch {} };
+try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.A) { A = s.A; pos = s.pos || 0; draft = s.draft || null; } } catch {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({A, pos, draft})); } catch {} };
 
 const toolDetailStep = t => ({ id:'tool:'+t, kind:'tool', tool:t, eyebrow:'Your systems', title:t });
 function flow(){
@@ -262,6 +265,7 @@ function nav({ canNext = true, label = 'Continue', optional = false, showBack = 
     ${optional ? '<button class="ghost" type="button" data-act="skip">Skip</button>' : ''}
     ${showBack ? '<button class="ghost" type="button" data-act="back">← Back</button>' : ''}
     <span class="enter">or press Enter ↵</span>
+    <button class="ghost save-later" type="button" data-act="savelater">Save &amp; finish later</button>
   </div><p class="msg" id="msg" role="alert"></p>`;
 }
 const head = s => `${s.eyebrow ? `<p class="eyebrow">${esc(s.eyebrow)}</p>` : ''}
@@ -380,6 +384,37 @@ function render(){
   window.scrollTo({ top: 0 });
 }
 
+function showSaveLater(){
+  syncFields();
+  $card.innerHTML = `<p class="eyebrow">Save your progress</p>
+    <h1 id="q" tabindex="-1">Finish later, on any device.</h1>
+    <p class="sub">We'll email you a link that opens the review right where you left off. It works for 30 days.</p>
+    <div class="fields"><div class="fld"><label for="sl_email">Your email</label>
+      <input type="email" id="sl_email" autocomplete="email" value="${esc(A.email || '')}"></div></div>
+    <div class="nav"><button class="btn" type="button" data-act="sendlink">Email me the link <span aria-hidden="true">→</span></button>
+      <button class="ghost" type="button" data-act="resume">← Keep going instead</button></div>
+    <p class="msg" id="msg" role="alert"></p>`;
+  document.getElementById('sl_email').focus();
+}
+async function sendLink(){
+  const email = document.getElementById('sl_email').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg('Please enter a valid email address.');
+  if (!A.email) A.email = email;
+  const b = $card.querySelector('[data-act="sendlink"]'); b.disabled = true; b.firstChild.textContent = 'Saving… ';
+  try {
+    const r = await fetch('/api/draft', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, answers: A, pos, id: draft?.id, t: draft?.t }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Your progress could not be saved.');
+    draft = { id: j.id, t: j.t }; save();
+    $card.innerHTML = `<div class="done-mark" aria-hidden="true"></div>
+      <h1 id="q" tabindex="-1">Saved.</h1>
+      <p class="sub">${j.emailed ? `We sent a link to <b>${esc(email)}</b>. Open it anytime to pick up where you left off.` :
+        `Bookmark this link to pick up where you left off: <a href="${esc(j.link)}">${esc(j.link)}</a>`}</p>
+      <div class="nav"><button class="btn" type="button" data-act="resume">Keep going now <span aria-hidden="true">→</span></button></div>`;
+  } catch (e) { msg(e.message + ' Please try again.'); b.disabled = false; b.firstChild.textContent = 'Email me the link '; }
+}
+
 function syncFields(){
   $card.querySelectorAll('[data-field]').forEach(el => { A[el.dataset.field] = el.value.trim(); });
   const o = document.getElementById('tools_other'); if (o) A.tools_other = o.value.trim();
@@ -434,6 +469,7 @@ async function submit(){
     if (!r.ok) throw new Error(j.error || 'Your answers could not be sent.');
     if (j.id && j.token) signUrl = `/sign.html?id=${encodeURIComponent(j.id)}&t=${encodeURIComponent(j.token)}`;
     try { localStorage.removeItem(KEY); } catch {}
+    draft = null;
     pos = flow().length - 1; render();
   }catch(e){
     msg(e.message + ' Please try again, or email hello@datapair.ai.');
@@ -447,7 +483,10 @@ $card.addEventListener('click', e => {
   if (b.dataset.act === 'next'){ s.kind === 'welcome' ? next() : validateAndNext(); return; }
   if (b.dataset.act === 'back'){ syncFields(); back(); return; }
   if (b.dataset.act === 'skip'){ syncFields(); next(); return; }
-  if (b.dataset.act === 'restart'){ A = {}; pos = 0; save(); next(); return; }
+  if (b.dataset.act === 'restart'){ A = {}; pos = 0; draft = null; save(); next(); return; }
+  if (b.dataset.act === 'savelater'){ showSaveLater(); return; }
+  if (b.dataset.act === 'sendlink'){ sendLink(); return; }
+  if (b.dataset.act === 'resume'){ render(); return; }
 
   if (b.dataset.tk){ // tool detail row
     A.tool_detail = A.tool_detail || {}; const d = A.tool_detail[s.tool] = A.tool_detail[s.tool] || {};
@@ -502,7 +541,7 @@ document.addEventListener('keydown', e => {
   const s = flow()[pos];
   if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON'){
     e.preventDefault();
-    const n = $card.querySelector('[data-act="next"]'); if (n && !n.disabled) n.click();
+    const n = $card.querySelector('[data-act="next"], [data-act="sendlink"]'); if (n && !n.disabled) n.click();
     return;
   }
   // letter shortcuts on single / multi questions
@@ -518,7 +557,19 @@ const loc = STEPS.find(s => s.id === 'location');
 Object.defineProperty(loc, 'title', { get(){ return A.country === 'United States' ? 'Which state?' : A.country === 'Canada' ? 'Which province?' : 'Which country?'; } });
 Object.defineProperty(loc, 'fields', { get(){ return [{ name:'location', label: A.country === 'United States' ? 'State' : A.country === 'Canada' ? 'Province' : 'Country', type:'text', required:true }]; } });
 
-render();
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const rid = q.get('resume'), rt = q.get('t');
+  if (rid && rt){
+    try {
+      const r = await fetch(`/api/draft?id=${encodeURIComponent(rid)}&t=${encodeURIComponent(rt)}`);
+      const j = await r.json();
+      if (r.ok){ A = j.answers || {}; pos = j.pos || 1; draft = { id: rid, t: rt }; save(); }
+    } catch {}
+    history.replaceState(null, '', location.pathname);
+  }
+  render();
+})();
 })();
 </script>
 </body>
