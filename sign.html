@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>DataPair — Sign the agreement</title>
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#FAFBFD;--ink:#071839;--ink-soft:#46536B;--rule:#D3DAE6;--line:#AEB9C4;--blue:#004EBC;--blue-deep:#003A8F;--blue-tint:#EAF1FC;--green:#019C86;--green-bright:#01D7A7;--green-tint:#F0FCF8;--err:#B42318}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Source Sans 3",system-ui,sans-serif;font-size:1.06rem;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2,.brand,.btn{font-family:Montserrat,system-ui,sans-serif}
+  :focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:3px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;max-width:1120px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.3rem;color:var(--ink);text-decoration:none}
+  .brand img{height:28px;width:auto}.brand b{color:var(--blue)}
+  .top span{color:var(--ink-soft);font-size:.95rem}
+  .bar{height:4px;background:linear-gradient(90deg,var(--blue),var(--green-bright))}
+  main{max-width:780px;margin:0 auto;padding:40px 24px 64px}
+  .eyebrow{font-family:Montserrat,sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin:0 0 10px}
+  h1{font-size:clamp(1.6rem,3.4vw,2.2rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 8px}
+  .lead{color:var(--ink-soft);margin:0 0 26px}
+  .glance{background:#fff;border:1.5px solid var(--rule);border-left:4px solid var(--blue);border-radius:8px;padding:18px 22px;margin:0 0 22px}
+  .glance h2{font-size:1rem;margin:0 0 8px}
+  .glance ul{margin:0;padding-left:20px;display:grid;gap:6px}
+  .doc{background:#fff;border:1.5px solid var(--rule);border-radius:8px;padding:26px 28px;max-height:430px;overflow:auto;font-size:.98rem}
+  .doc h3{font-family:Montserrat,sans-serif;font-size:.95rem;margin:16px 0 4px}
+  .doc h3:first-child{margin-top:0}
+  .doc p{margin:0 0 8px;color:#1B2333}
+  .doc .intro{color:var(--ink-soft);font-size:.92rem}
+  .scroll-hint{font-size:.9rem;color:var(--ink-soft);margin:8px 0 0}
+  .dl{display:inline-block;margin-top:6px;font-size:.95rem;color:var(--blue);background:none;border:0;padding:0;font:inherit;cursor:pointer;text-decoration:underline}
+  form{margin-top:32px;background:#fff;border:1.5px solid var(--rule);border-radius:8px;padding:26px 28px}
+  form h2{font-size:1.2rem;margin:0 0 18px}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .fld{display:flex;flex-direction:column;gap:6px}
+  .fld.full{grid-column:1/-1}
+  label{font-weight:600;font-size:.97rem}
+  .hint{font-weight:400;color:var(--ink-soft)}
+  input[type=text],input[type=email]{font:inherit;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:7px;padding:12px 14px;width:100%}
+  input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,78,188,.18)}
+  .sigbox{grid-column:1/-1;border:1.5px dashed var(--line);border-radius:8px;padding:12px 16px 6px;background:var(--paper)}
+  .sigbox input{border:0;border-bottom:1.5px solid var(--ink);border-radius:0;background:transparent;font-family:Caveat,cursive;font-size:2rem;padding:4px 2px;color:var(--ink)}
+  .sigbox input:focus{box-shadow:none;border-color:var(--blue)}
+  .sigbox small{display:block;color:var(--ink-soft);font-size:.85rem;padding:6px 0}
+  .consent{grid-column:1/-1;display:flex;gap:12px;align-items:flex-start;font-weight:400;font-size:.97rem;color:var(--ink);cursor:pointer}
+  .consent input{margin-top:5px;width:18px;height:18px;accent-color:var(--blue);flex:none}
+  .btn{display:inline-flex;align-items:center;gap:10px;background:var(--blue);color:#fff;border:0;border-radius:7px;padding:14px 26px;font:inherit;font-weight:600;font-size:1.02rem;cursor:pointer;text-decoration:none;margin-top:22px}
+  .btn:hover{background:var(--blue-deep)}.btn[disabled]{opacity:.55;cursor:default}
+  .msg{color:var(--err);font-weight:500;margin:12px 0 0;min-height:1.3em}
+  .done{text-align:left}
+  .done-mark{width:56px;height:56px;border-radius:50%;background:var(--green-tint);border:2px solid var(--green-bright);display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+  .done-mark::after{content:"";width:18px;height:10px;border-left:3px solid var(--green);border-bottom:3px solid var(--green);transform:rotate(-45deg) translate(2px,-2px)}
+  .hp{position:absolute;left:-9999px}
+  footer{text-align:center;color:var(--ink-soft);font-size:.88rem;padding:0 20px 30px}
+  footer a{color:var(--ink-soft)}
+  @media (max-width:600px){main{padding:28px 16px 48px}.doc,form{padding:20px 18px}.fields{grid-template-columns:1fr}.top{padding:14px 18px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><a class="brand" href="/" aria-label="DataPair home"><img src="/mark.png" alt="" width="37" height="28"><span>Data<b>Pair</b></span></a><span>Secure electronic signing</span></div>
+  <div class="bar" aria-hidden="true"></div>
+</header>
+<main id="main">
+  <p class="eyebrow">Last step</p>
+  <h1>Review and sign your agreement</h1>
+  <p class="lead">This lets DataPair represent your data to buyers. Nothing up front, and you approve every deal.</p>
+  <div id="agreement"><p class="lead">Loading the agreement…</p></div>
+
+  <form id="f" novalidate hidden>
+    <h2>Sign</h2>
+    <div class="fields">
+      <div class="fld full"><label for="company">Company legal name <span class="hint">(as registered, e.g. "Acme HVAC Services LLC")</span></label><input type="text" id="company" autocomplete="organization" required></div>
+      <div class="fld"><label for="name">Your full name</label><input type="text" id="name" autocomplete="name" required></div>
+      <div class="fld"><label for="title">Your title</label><input type="text" id="title" autocomplete="organization-title" required></div>
+      <div class="fld full"><label for="email">Email <span class="hint">(we'll send your signed copy here)</span></label><input type="email" id="email" autocomplete="email" required></div>
+      <div class="sigbox"><label for="signature">Type your full name to sign</label><input type="text" id="signature" autocomplete="off" required aria-describedby="sighint"><small id="sighint">Must match your full name above.</small></div>
+      <label class="consent"><input type="checkbox" id="agree"> <span id="consent-text"></span></label>
+      <div class="hp" aria-hidden="true"><label>Leave empty<input type="text" id="hp" tabindex="-1" autocomplete="off"></label></div>
+    </div>
+    <button class="btn" type="submit" id="go">Sign agreement</button>
+    <p class="msg" id="msg" role="alert"></p>
+  </form>
+</main>
+<footer>Questions before signing? <a href="mailto:ari@datapair.ai">ari@datapair.ai</a></footer>
+
+<script>
+(async () => {
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const q = new URLSearchParams(location.search);
+const id = q.get('id') || '', t = q.get('t') || '';
+const $ = s => document.getElementById(s);
+let A;
+try {
+  const r = await fetch('/api/agreement' + (id && t ? `?id=${encodeURIComponent(id)}&t=${encodeURIComponent(t)}` : ''));
+  A = await r.json(); if (!r.ok) throw 0;
+} catch { $('agreement').innerHTML = '<p class="msg">The agreement could not be loaded. Please refresh, or email ari@datapair.ai.</p>'; return; }
+
+$('agreement').innerHTML = `
+  <div class="glance"><h2>At a glance</h2><ul>${A.summary.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
+  <div class="doc" tabindex="0" aria-label="Full agreement text">
+    <h3>${esc(A.title)}</h3><p class="intro">${esc(A.intro)}</p>
+    ${A.sections.map(([h, ps]) => `<h3>${esc(h)}</h3>${ps.map(p => `<p>${esc(p)}</p>`).join('')}`).join('')}
+    <h3>DataPair signature</h3><p>${esc(A.datapair.name)}, ${esc(A.datapair.title)}, DataPair LLC (signed electronically)</p>
+  </div>
+  <p class="scroll-hint">Scroll to read the full agreement. You'll get a signed PDF copy by email right after signing.</p>`;
+$('consent-text').textContent = A.consent;
+
+if (A.alreadySigned){
+  $('agreement').insertAdjacentHTML('afterbegin', '<p class="lead"><b>This agreement has already been signed for your company.</b> Email ari@datapair.ai if you need a copy.</p>');
+}
+const p = A.prefill || {};
+$('company').value = p.company || ''; $('name').value = p.name || ''; $('title').value = p.title || ''; $('email').value = p.email || '';
+$('f').hidden = false;
+
+$('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = $('msg'); msg.textContent = '';
+  const body = { id, t, version: A.version, company: $('company').value.trim(), name: $('name').value.trim(), title: $('title').value.trim(),
+    email: $('email').value.trim(), signature: $('signature').value.trim(), agree: $('agree').checked, website: $('hp').value };
+  for (const [k, label] of [['company','your company legal name'],['name','your full name'],['title','your title'],['email','your email']])
+    if (!body[k]) { msg.textContent = 'Please add ' + label + '.'; $(k).focus(); return; }
+  if (body.signature.toLowerCase().replace(/\s+/g,' ') !== body.name.toLowerCase().replace(/\s+/g,' ')) { msg.textContent = 'Type your full name exactly as above to sign.'; $('signature').focus(); return; }
+  if (!body.agree) { msg.textContent = 'Please check the box to agree.'; return; }
+  const btn = $('go'); btn.disabled = true; btn.textContent = 'Signing…';
+  try {
+    const r = await fetch('/api/sign', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Signing failed.');
+    let url = '';
+    if (j.pdf) { const bin = atob(j.pdf), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      url = URL.createObjectURL(new Blob([u], { type:'application/pdf' })); }
+    $('main').innerHTML = `<div class="done"><div class="done-mark" aria-hidden="true"></div>
+      <h1 tabindex="-1" id="dh">Signed. Welcome to DataPair, ${esc(body.name.split(' ')[0])}.</h1>
+      <p class="lead">${j.emailed ? `A signed copy is on its way to <b>${esc(body.email)}</b>.` : 'Download your signed copy below for your records.'}
+      We'll start matching your data with buyers and be in touch with next steps.</p>
+      ${url ? `<a class="btn" href="${url}" download="${esc(j.filename || 'DataPair Agreement.pdf')}">Download signed PDF</a>` : ''}</div>`;
+    $('dh').focus(); window.scrollTo({ top: 0 });
+  } catch (err) { msg.textContent = err.message + ' If it keeps happening, email ari@datapair.ai.'; btn.disabled = false; btn.textContent = 'Sign agreement'; }
+});
+})();
+</script>
+</body>
+</html>

@@ -1,22 +1,20 @@
-// POST /api/intake — saves a seller intake submission to Upstash Redis,
-// and emails a notification through Zoho if ZOHO_USER / ZOHO_PASS are set.
-import { Redis } from '@upstash/redis';
-import nodemailer from 'nodemailer';
+// POST /api/intake — saves a seller intake submission to Upstash Redis, emails an
+// alert through Zoho if configured, and returns a private link for signing the agreement.
+// Accepts the click-through intake (type "seller-v2") and the original short form.
+import crypto from 'node:crypto';
+import { redis, readBody, sendMail, notifyTo } from '../lib/store.js';
+import { buildIntakePdf, intakeFilename } from '../lib/intake-pdf.js';
 
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN,
-});
-
-const FIELDS = ['type', 'name', 'company', 'email', 'phone', 'industry', 'span',
-  'description', 'personal', 'ownership', 'source', 'consent'];
-const REQUIRED = ['name', 'company', 'email', 'industry', 'span', 'description',
-  'personal', 'ownership', 'consent'];
+const FIELDS = ['type', 'name', 'company', 'email', 'phone', 'industry', 'span', 'employees',
+  'description', 'personal', 'ownership', 'source', 'consent', 'title'];
+const REQUIRED_V1 = ['name', 'company', 'email', 'industry', 'span', 'description', 'personal', 'ownership', 'consent'];
+const REQUIRED_V2 = ['name', 'company', 'email', 'industry', 'consent'];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST.' });
 
-  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+  let body;
+  try { body = readBody(req); } catch { return res.status(400).json({ error: 'The form data was unreadable.' }); }
 
   // Honeypot: bots fill the hidden "website" field. Pretend success.
   if (body.website) return res.status(200).json({ ok: true });
@@ -24,39 +22,58 @@ export default async function handler(req, res) {
   const entry = {};
   for (const k of FIELDS) entry[k] = String(body[k] ?? '').trim().slice(0, k === 'description' ? 5000 : 300);
 
-  const missing = REQUIRED.filter(k => !entry[k]);
+  const isV2 = entry.type === 'seller-v2';
+  const missing = (isV2 ? REQUIRED_V2 : REQUIRED_V1).filter(k => !entry[k]);
   if (missing.length) return res.status(400).json({ error: `Missing: ${missing.join(', ')}.` });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.email)) return res.status(400).json({ error: 'That email address looks incomplete.' });
 
-  entry.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  if (isV2) {
+    entry.summary = (Array.isArray(body.summary) ? body.summary : [])
+      .slice(0, 120)
+      .filter(r => Array.isArray(r) && r.length === 2)
+      .map(([q, a]) => [String(q).slice(0, 200), String(a ?? '').slice(0, 2000)]);
+    try {
+      const raw = JSON.stringify(body.answers || {});
+      entry.answers = raw.length <= 40000 ? JSON.parse(raw) : { note: 'answers too large to store' };
+    } catch { entry.answers = {}; }
+  }
+
+  entry.id = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
+  entry.token = crypto.randomBytes(16).toString('hex'); // private key for the signing link
   entry.createdAt = new Date().toISOString();
   entry.status = 'new';
 
   try {
     await redis.lpush('datapair:intake', JSON.stringify(entry));
+    await redis.set(`datapair:intake:${entry.id}`, JSON.stringify(entry));
   } catch (e) {
     console.error('redis', e);
     return res.status(500).json({ error: 'The form could not be saved.' });
   }
 
-  // Optional email alert (works once the Zoho mailbox is live)
-  if (process.env.ZOHO_USER && process.env.ZOHO_PASS) {
-    try {
-      const t = nodemailer.createTransport({
-        host: process.env.ZOHO_SMTP_HOST || 'smtp.zoho.com',
-        port: 465, secure: true,
-        auth: { user: process.env.ZOHO_USER, pass: process.env.ZOHO_PASS },
-      });
-      await t.sendMail({
-        from: `"DataPair Intake" <${process.env.ZOHO_USER}>`,
-        to: process.env.NOTIFY_TO || process.env.ZOHO_USER,
-        replyTo: entry.email,
-        subject: `New data intake: ${entry.company} (${entry.industry})`,
-        text: FIELDS.filter(k => k !== 'type').map(k => `${k}: ${entry[k]}`).join('\n')
-          + `\n\nReceived ${entry.createdAt}`,
-      });
-    } catch (e) { console.error('mail', e); /* submission is already saved */ }
-  }
+  const origin = `https://${req.headers['x-forwarded-host'] || req.headers.host || 'datapair.ai'}`;
+  const signUrl = `${origin}/sign.html?id=${entry.id}&t=${entry.token}`;
 
-  return res.status(200).json({ ok: true });
+  try {
+    const lines = isV2
+      ? [`Name: ${entry.name}`, `Email: ${entry.email}`, `Phone: ${entry.phone || '—'}`, '',
+         ...entry.summary.map(([q, a]) => `${q}\n  ${a}`)]
+      : FIELDS.filter(k => k !== 'type').map(k => `${k}: ${entry[k]}`);
+    let intakePdf = null;
+    try { intakePdf = await buildIntakePdf(entry); } catch (e) { console.error('intake pdf', e); }
+    await sendMail({
+      to: notifyTo(), replyTo: entry.email,
+      subject: `New data intake: ${entry.company} (${entry.industry}${entry.employees ? ', ' + entry.employees + ' employees' : ''})`,
+      text: `The full intake is attached as a PDF. You'll get a second email with the signed agreement when they sign.\n\n`
+        + lines.join('\n') + `\n\nReceived ${entry.createdAt}\nTheir signing link: ${signUrl}`,
+      attachments: intakePdf ? [{ filename: intakeFilename(entry), content: intakePdf, contentType: 'application/pdf' }] : [],
+    });
+    if (isV2) await sendMail({
+      to: entry.email,
+      subject: 'We received your DataPair data review',
+      text: `Hi ${entry.name.split(' ')[0]},\n\nThanks for telling us about ${entry.company}'s data. We'll review your answers and reply within two business days.\n\nIf you haven't yet, you can review and sign our agreement here:\n${signUrl}\n\nDataPair\nwww.datapair.ai`,
+    });
+  } catch (e) { console.error('mail', e); /* submission is already saved */ }
+
+  return res.status(200).json({ ok: true, id: entry.id, token: entry.token });
 }

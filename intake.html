@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataPair — Tell us about your data</title>
+<meta name="description" content="Answer a few quick questions about your business and its data. No cost, no commitment, and no data sent.">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#FAFBFD;--ink:#071839;--ink-soft:#46536B;--rule:#D3DAE6;--line:#AEB9C4;--blue:#004EBC;--blue-deep:#003A8F;
+    --blue-tint:#EAF1FC;--green:#019C86;--green-bright:#01D7A7;--green-tint:#F0FCF8;--err:#B42318}
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  html,body{height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Source Sans 3",system-ui,sans-serif;font-size:1.125rem;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+  h1,h2,.brand,.btn{font-family:Montserrat,system-ui,sans-serif}
+  :focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:3px}
+  h1:focus,h1:focus-visible{outline:none}
+
+  .top{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;max-width:1120px;width:100%;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.3rem;color:var(--ink);text-decoration:none}
+  .brand img{height:28px;width:auto}
+  .brand b{color:var(--blue)}
+  .top .step-count{color:var(--ink-soft);font-size:.95rem}
+  .bar{height:4px;background:var(--rule)}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--green-bright));transition:width .35s ease}
+
+  main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:56px 24px 40px}
+  .card{width:100%;max-width:800px;animation:in .28s ease}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .eyebrow{font-family:Montserrat,sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin:0 0 12px}
+  h1{font-size:clamp(1.7rem,3.6vw,2.4rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 10px;font-weight:700}
+  .sub{color:var(--ink-soft);margin:0 0 28px;max-width:58ch}
+  .opt-tag{font-family:"Source Sans 3",sans-serif;font-size:.85rem;font-weight:600;color:var(--ink-soft);background:var(--blue-tint);border-radius:20px;padding:2px 10px;vertical-align:middle;margin-left:8px;letter-spacing:0}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .tiles.narrow{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .tile{display:flex;align-items:center;gap:12px;text-align:left;font:inherit;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:14px 16px;cursor:pointer;min-height:56px;transition:border-color .15s,background .15s,transform .1s}
+  .tile:hover{border-color:var(--blue)}
+  .tile:active{transform:scale(.99)}
+  .tile .k{flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1.5px solid var(--line);border-radius:5px;font-size:.8rem;font-weight:600;color:var(--ink-soft);background:var(--paper)}
+  .tile[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-tint)}
+  .tile[aria-pressed="true"] .k{background:var(--blue);border-color:var(--blue);color:#fff}
+  .tile small{display:block;color:var(--ink-soft);font-size:.88rem;line-height:1.3}
+
+  .group{margin:0 0 26px}
+  .group h2{font-size:1rem;font-weight:700;margin:0 0 10px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font:inherit;font-size:1rem;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer}
+  .chip:hover{border-color:var(--blue)}
+  .chip[aria-pressed="true"]{border-color:var(--blue);background:var(--blue);color:#fff}
+
+  .fields{display:grid;gap:16px}
+  .fields.two{grid-template-columns:1fr 1fr}
+  .fld{display:flex;flex-direction:column;gap:6px}
+  .fld label{font-weight:600;font-size:.98rem}
+  .fld .hint{font-weight:400;color:var(--ink-soft)}
+  input[type=text],input[type=email],input[type=tel],input[type=url],textarea{font:inherit;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:7px;padding:13px 14px;width:100%}
+  textarea{min-height:110px;resize:vertical}
+  input:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,78,188,.18)}
+  .consent{display:flex;gap:12px;align-items:flex-start;font-size:.97rem;color:var(--ink-soft);margin-top:6px;cursor:pointer}
+  .consent input{margin-top:5px;width:18px;height:18px;accent-color:var(--blue);flex:none}
+
+  .tool-head{display:flex;align-items:center;gap:12px;margin:0 0 6px}
+  .tool-head .pill{font-size:.85rem;color:var(--ink-soft)}
+  .row{margin:0 0 22px}
+  .row h2{font-size:1rem;font-weight:700;margin:0 0 10px}
+
+  .nav{display:flex;align-items:center;gap:14px;margin-top:32px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:10px;background:var(--blue);color:#fff;border:0;border-radius:7px;padding:14px 24px;font:inherit;font-weight:600;font-size:1.02rem;cursor:pointer;text-decoration:none}
+  .btn:hover{background:var(--blue-deep)}
+  .btn[disabled]{opacity:.55;cursor:default}
+  .ghost{background:none;border:0;font:inherit;color:var(--ink-soft);cursor:pointer;padding:10px 4px;font-weight:600}
+  .ghost:hover{color:var(--ink)}
+  .enter{color:var(--ink-soft);font-size:.88rem}
+  .msg{color:var(--err);font-weight:500;margin:14px 0 0;min-height:1.4em}
+
+  .welcome ul{list-style:none;padding:0;margin:0 0 30px;display:grid;gap:12px}
+  .welcome li{padding-left:30px;position:relative;color:var(--ink)}
+  .welcome li::before{content:"";position:absolute;left:4px;top:8px;width:12px;height:7px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+  .resume{margin-top:18px;color:var(--ink-soft);font-size:.97rem}
+  .done-mark{width:56px;height:56px;border-radius:50%;background:var(--green-tint);border:2px solid var(--green-bright);display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+  .done-mark::after{content:"";width:18px;height:10px;border-left:3px solid var(--green);border-bottom:3px solid var(--green);transform:rotate(-45deg) translate(2px,-2px)}
+
+  .next-step{margin-top:30px;background:#fff;border:1.5px solid var(--rule);border-left:4px solid var(--green-bright);border-radius:8px;padding:22px 24px}
+  .next-step h2{font-size:1.15rem;margin:0 0 6px}
+  .next-step p{margin:0 0 4px;color:var(--ink-soft)}
+  .next-step .btn{margin:14px 0 6px}
+  .next-step .later{font-size:.92rem}
+  footer{text-align:center;color:var(--ink-soft);font-size:.88rem;padding:18px 20px 26px}
+  footer a{color:var(--ink-soft)}
+
+  @media (max-width:600px){
+    main{padding:32px 18px 28px}
+    .top{padding:14px 18px}
+    .fields.two{grid-template-columns:1fr}
+    .tiles,.tiles.narrow{grid-template-columns:1fr 1fr}
+    .tile{padding:12px;min-height:52px;font-size:1rem}
+    .tile .k{display:none}
+    .enter{display:none}
+  }
+  @media (max-width:380px){.tiles,.tiles.narrow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <a class="brand" href="/" aria-label="DataPair home"><img src="/mark.png" alt="" width="37" height="28"><span>Data<b>Pair</b></span></a>
+    <span class="step-count" id="count" aria-live="polite"></span>
+  </div>
+  <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+</header>
+
+<main><div class="card" id="card"></div></main>
+
+<footer>Questions? <a href="mailto:hello@datapair.ai">hello@datapair.ai</a> · We never ask for passwords, files or customer records.</footer>
+
+<script>
+(() => {
+const KEY = 'datapair-intake-v2';
+const $card = document.getElementById('card');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const TOOL_GROUPS = [
+  ['Email', ['Gmail / Google Workspace', 'Outlook / Microsoft 365', 'Zoho Mail']],
+  ['Chat & meetings', ['Slack', 'Microsoft Teams', 'Zoom', 'Google Meet']],
+  ['Files & documents', ['Google Drive', 'OneDrive / SharePoint', 'Dropbox', 'Box']],
+  ['Sales & customers (CRM)', ['Salesforce', 'HubSpot', 'Zoho CRM', 'Pipedrive']],
+  ['Accounting & finance', ['QuickBooks', 'Xero', 'NetSuite', 'Sage', 'SAP']],
+  ['Projects & knowledge', ['Asana', 'monday.com', 'Jira', 'ClickUp', 'Notion', 'Confluence']],
+  ['Customer support', ['Zendesk', 'Intercom', 'Freshdesk']],
+  ['HR & payroll', ['Gusto', 'ADP', 'Rippling', 'BambooHR']],
+  ['Industry & operations', ['ServiceTitan', 'Procore', 'Clio', 'Shopify', 'Practice management / EHR', 'Booking / reservation system']],
+  ['Code & design', ['GitHub', 'GitLab', 'Figma', 'AutoCAD / Revit']],
+];
+
+// Each step: id, kind, title, sub, options, optional, when(answers)
+const STEPS = [
+  { id:'welcome', kind:'welcome' },
+  { id:'company', kind:'fields', eyebrow:'Your company', title:'What\'s your company called?',
+    fields:[{name:'company', label:'Company name', type:'text', required:true, auto:'organization'},
+            {name:'website', label:'Website', hint:'(if you have one)', type:'text', auto:'url', placeholder:'yourcompany.com'}] },
+  { id:'industry', kind:'single', eyebrow:'Your company', title:'Which industry are you in?',
+    options:['Legal','Accounting & tax','Healthcare','Finance & insurance','Real estate & mortgage','Construction & trades',
+      'Logistics & transportation','Manufacturing','Retail & e-commerce','Software & tech','Travel & hospitality',
+      'Marketing & agencies','Consulting & professional services','Call center & support','Education','Other'] },
+  { id:'industry_other', kind:'fields', eyebrow:'Your company', title:'Which industry?', when:a=>a.industry==='Other',
+    fields:[{name:'industry_other', label:'Industry', type:'text', required:true}] },
+  { id:'does', kind:'fields', eyebrow:'Your company', title:'In a sentence or two, what does your business do?',
+    sub:'Plain words are perfect. For example: "We install and service commercial HVAC systems across South Florida."',
+    fields:[{name:'does', label:'What you do', type:'textarea', required:true}] },
+  { id:'country', kind:'single', eyebrow:'Your company', title:'Where is the business based?',
+    options:['United States','Canada','United Kingdom','European Union','Other'] },
+  { id:'location', kind:'fields', eyebrow:'Your company', title:'Which state or country?',
+    fields:[{name:'location', label:'State, province or country', type:'text', required:true}] },
+  { id:'years', kind:'single', eyebrow:'Your company', title:'How long has the business been operating?', narrow:true,
+    options:['Less than 3 years','3–5 years','5–10 years','10–20 years','20+ years'] },
+  { id:'status', kind:'single', eyebrow:'Your company', title:'Where is the business today?',
+    options:[['Operating normally',''],['Being sold or merged',''],['Winding down or closed','Closed companies can often still sell their records.']] },
+
+  { id:'employees', kind:'single', eyebrow:'Your team', title:'How many full-time employees do you have now?', narrow:true,
+    options:['1–9','10–19','20–49','50–99','100–249','250–999','1,000+'] },
+  { id:'peak', kind:'single', eyebrow:'Your team', title:'Was the team ever larger than it is now?',
+    sub:'Buyers value the records a bigger team created, even if you\'ve since downsized.', narrow:true,
+    options:['No, about the same','Yes, 20–49 at peak','Yes, 50–99 at peak','Yes, 100–249 at peak','Yes, 250+ at peak'] },
+  { id:'contractors', kind:'single', eyebrow:'Your team', title:'How many contractors or freelancers work with you?', narrow:true,
+    options:['None','1–9','10–49','50+'] },
+  { id:'inboxes', kind:'single', eyebrow:'Your team', title:'Roughly how many work email inboxes does the company have?',
+    sub:'Count every employee mailbox, current and former, if they\'re still kept.', narrow:true,
+    options:['Under 10','10–24','25–99','100–499','500+','Not sure'] },
+
+  { id:'tools', kind:'tools', eyebrow:'Your systems', title:'Which tools does your business use?',
+    sub:'Tap everything that applies. The more systems you have, the more your data is usually worth.' },
+  // tool detail steps are inserted dynamically after "tools"
+
+  { id:'history', kind:'single', eyebrow:'Your data', title:'Overall, how far back do your records go?', narrow:true,
+    options:['Less than 2 years','2–5 years','5–10 years','10+ years'] },
+  { id:'size', kind:'single', eyebrow:'Your data', title:'Roughly how much data do you store in total?',
+    sub:'A rough guess is fine. If you have no idea, pick "Not sure."', narrow:true,
+    options:['Under 100 GB','100 GB–1 TB','1–10 TB','More than 10 TB','Not sure'] },
+  { id:'language', kind:'single', eyebrow:'Your data', title:'What language are most of your records in?', narrow:true,
+    options:['English','Mostly English, some other','Mainly another language'] },
+  { id:'linked', kind:'single', eyebrow:'Your data', optional:true, title:'Do your records connect across systems?',
+    sub:'For example, a customer in your CRM tied to their emails, invoices and project files. Connected records are worth more.',
+    options:['Yes, most of them','Somewhat','Not really','Not sure'] },
+  { id:'written', kind:'multi', eyebrow:'Your data', optional:true, title:'Which of these do you have in writing?',
+    sub:'Written know-how is some of the most valuable data for AI labs. Pick all that apply.',
+    options:['Procedures, SOPs or playbooks','Proposals, quotes or bids','Contracts and statements of work','Training materials',
+      'Hiring notes or interview feedback','Reports and analysis','Meeting notes or call transcripts','None of these'], none:'None of these' },
+
+  { id:'sensitive', kind:'multi', eyebrow:'Rights & restrictions', title:'Does any of your data include the following?',
+    sub:'This doesn\'t rule you out. It tells us what needs to be removed or excluded before any deal.',
+    options:['Patient or health information','Payment card or bank details','Client info under confidentiality agreements',
+      'Attorney–client privileged material','Information about children','Government or classified work','None of these','Not sure'],
+    none:'None of these' },
+  { id:'ownership', kind:'single', eyebrow:'Rights & restrictions', title:'Does your company own this data, or have the right to share it?',
+    options:[['Yes',''],['Partly','Some of it belongs to clients or partners.'],['Not sure','']] },
+  { id:'buyers', kind:'single', eyebrow:'Rights & restrictions', title:'Have you already talked with any data buyers?',
+    sub:'For example Mercor, Handshake, Scale AI, micro1 or an AI lab directly.', options:['No','Yes'] },
+  { id:'buyers_names', kind:'fields', eyebrow:'Rights & restrictions', title:'Which buyers have you talked with?', when:a=>a.buyers==='Yes',
+    sub:'We\'ll list them as excluded in our agreement, so you owe us nothing on deals with them.',
+    fields:[{name:'buyers_names', label:'Company names', type:'text', required:true, placeholder:'e.g. Mercor (got a quote in October)'}] },
+  { id:'never', kind:'fields', eyebrow:'Rights & restrictions', optional:true, title:'Is there anything you would never want shared?',
+    fields:[{name:'never', label:'Off-limits data', type:'textarea', placeholder:'e.g. payroll, our largest client\'s files, the founders\' inboxes'}] },
+
+  { id:'it', kind:'grid', eyebrow:'Logistics', title:'Who would pull the data if a deal happens?',
+    rows:[{name:'it_who', label:'Who manages your IT?', options:['We do it in-house','An outside IT company','No one formally']},
+          {name:'export_time', label:'How quickly could you provide access or an export?', options:['Within a few days','1–2 weeks','A month or more','Not sure']}] },
+  { id:'deal', kind:'grid', eyebrow:'Logistics', optional:true, title:'A couple of deal preferences',
+    sub:'Both of these can raise what buyers offer. Nothing here is a commitment.',
+    rows:[{name:'refresh', label:'Open to sharing new data periodically (for example, every quarter)?', options:['Yes','Maybe','No']},
+          {name:'exclusive', label:'Open to licensing to one buyer only, for a higher price?', options:['Yes','Maybe','No']}] },
+
+  { id:'contact', kind:'contact', eyebrow:'Last step', title:'Where should we send your results?' },
+  { id:'done', kind:'done' },
+];
+
+let A = {};          // answers
+let signUrl = '';    // private signing link, set after submit
+let pos = 0;         // index into active flow
+try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.A) { A = s.A; pos = s.pos || 0; } } catch {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({A, pos})); } catch {} };
+
+const toolDetailStep = t => ({ id:'tool:'+t, kind:'tool', tool:t, eyebrow:'Your systems', title:t });
+function flow(){
+  const out = [];
+  for (const s of STEPS){
+    if (s.when && !s.when(A)) continue;
+    if (s.id === 'location' && !A.country) continue;
+    out.push(s);
+    if (s.kind === 'tools') for (const t of (A.tools || [])) out.push(toolDetailStep(t));
+  }
+  return out;
+}
+const answerable = f => f.filter(s => !['welcome','done'].includes(s.kind));
+
+function setProgress(f){
+  const qs = answerable(f), s = f[pos];
+  const i = qs.indexOf(s);
+  const bar = document.getElementById('bar'), count = document.getElementById('count');
+  if (s.kind === 'welcome'){ bar.style.width = '0%'; count.textContent = ''; return; }
+  if (s.kind === 'done'){ bar.style.width = '100%'; count.textContent = 'Done'; return; }
+  bar.style.width = Math.round((i / qs.length) * 100) + '%';
+  count.textContent = `${Math.round((i / qs.length) * 100)}% done`;
+}
+
+function go(d){
+  const f = flow();
+  pos = Math.max(0, Math.min(f.length - 1, pos + d));
+  save(); render();
+}
+function next(){ go(1); }
+function back(){ go(-1); }
+
+function nav({ canNext = true, label = 'Continue', optional = false, showBack = true } = {}){
+  return `<div class="nav">
+    <button class="btn" type="button" data-act="next" ${canNext ? '' : 'disabled'}>${label} <span aria-hidden="true">→</span></button>
+    ${optional ? '<button class="ghost" type="button" data-act="skip">Skip</button>' : ''}
+    ${showBack ? '<button class="ghost" type="button" data-act="back">← Back</button>' : ''}
+    <span class="enter">or press Enter ↵</span>
+  </div><p class="msg" id="msg" role="alert"></p>`;
+}
+const head = s => `${s.eyebrow ? `<p class="eyebrow">${esc(s.eyebrow)}</p>` : ''}
+  <h1 id="q" tabindex="-1">${esc(s.title)}${s.optional ? '<span class="opt-tag">Optional</span>' : ''}</h1>
+  ${s.sub ? `<p class="sub">${esc(s.sub)}</p>` : ''}`;
+const optList = o => o.map(x => Array.isArray(x) ? x : [x, '']);
+const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function render(){
+  const f = flow();
+  if (pos >= f.length) pos = f.length - 1;
+  const s = f[pos];
+  setProgress(f);
+  let html = '';
+
+  if (s.kind === 'welcome'){
+    const started = Object.keys(A).length > 0;
+    html = `<div class="welcome">
+      <p class="eyebrow">Free data review</p>
+      <h1 id="q" tabindex="-1">Let's see what your business data could be worth.</h1>
+      <p class="sub">Answer some quick questions, mostly taps. It takes about 5 minutes.</p>
+      <ul><li>No cost and no commitment</li><li>You don't send any files, passwords or customer records</li>
+        <li>Your answers stay private. We never share your name without your OK</li></ul>
+      <div class="nav"><button class="btn" type="button" data-act="next">${started ? 'Continue where you left off' : 'Get started'} <span aria-hidden="true">→</span></button>
+      ${started ? '<button class="ghost" type="button" data-act="restart">Start over</button>' : ''}</div>
+      ${started ? '<p class="resume">We saved your answers on this device.</p>' : ''}</div>`;
+  }
+
+  else if (s.kind === 'single'){
+    html = head(s) + `<div class="tiles ${s.narrow ? 'narrow' : ''}" role="group" aria-labelledby="q">` +
+      optList(s.options).map(([v, d], i) => `<button type="button" class="tile" data-val="${esc(v)}" aria-pressed="${A[s.id] === v}">
+        <span class="k">${letters[i] || ''}</span><span>${esc(v)}${d ? `<small>${esc(d)}</small>` : ''}</span></button>`).join('') +
+      `</div>` + nav({ canNext: !!A[s.id] || s.optional, optional: s.optional });
+  }
+
+  else if (s.kind === 'multi'){
+    const cur = A[s.id] || [];
+    html = head(s) + `<div class="tiles" role="group" aria-labelledby="q">` +
+      optList(s.options).map(([v], i) => `<button type="button" class="tile" data-multi="${esc(v)}" aria-pressed="${cur.includes(v)}">
+        <span class="k">${letters[i] || ''}</span><span>${esc(v)}</span></button>`).join('') +
+      `</div>` + nav({ canNext: cur.length > 0 || s.optional, optional: s.optional });
+  }
+
+  else if (s.kind === 'tools'){
+    const cur = A.tools || [];
+    html = head(s) + TOOL_GROUPS.map(([g, list]) => `<div class="group"><h2>${esc(g)}</h2><div class="chips">` +
+        list.map(t => `<button type="button" class="chip" data-tool="${esc(t)}" aria-pressed="${cur.includes(t)}">${esc(t)}</button>`).join('') +
+      `</div></div>`).join('') +
+      `<div class="fld"><label for="tools_other">Anything else? <span class="hint">(separate with commas)</span></label>
+        <input type="text" id="tools_other" value="${esc(A.tools_other || '')}" placeholder="e.g. a custom database, an industry app"></div>` +
+      nav({ canNext: true });
+  }
+
+  else if (s.kind === 'tool'){
+    const d = (A.tool_detail || {})[s.tool] || {};
+    const rows = [
+      ['years', 'How many years of records are in it?', ['Under 2','2–5','5–10','10+']],
+      ['volume', 'How much is in it?', ['A little','A fair amount','A lot','Not sure']],
+      ['export', 'Could you export it or give access?', ['Yes, easily','With some help','Not sure']],
+    ];
+    const tools = A.tools || [], n = tools.indexOf(s.tool) + 1;
+    html = `<p class="eyebrow">Your systems · tool ${n} of ${tools.length}</p>
+      <h1 id="q" tabindex="-1">${esc(s.tool)}</h1><p class="sub">Three quick taps. Rough answers are fine.</p>` +
+      rows.map(([k, label, opts]) => `<div class="row"><h2>${esc(label)}</h2><div class="tiles narrow">` +
+        opts.map(o => `<button type="button" class="tile" data-tk="${k}" data-val="${esc(o)}" aria-pressed="${d[k] === o}"><span>${esc(o)}</span></button>`).join('') +
+      `</div></div>`).join('') + nav({ canNext: !!(d.years && d.volume && d.export) });
+  }
+
+  else if (s.kind === 'grid'){
+    const done = s.rows.every(r => A[r.name]);
+    html = head(s) + s.rows.map(r => `<div class="row"><h2>${esc(r.label)}</h2><div class="tiles narrow">` +
+        r.options.map(o => `<button type="button" class="tile" data-row="${r.name}" data-val="${esc(o)}" aria-pressed="${A[r.name] === o}"><span>${esc(o)}</span></button>`).join('') +
+      `</div></div>`).join('') + nav({ canNext: done || s.optional, optional: s.optional });
+  }
+
+  else if (s.kind === 'fields'){
+    html = head(s) + `<div class="fields">` + s.fields.map(fl => `<div class="fld">
+        <label for="f_${fl.name}">${esc(fl.label)} ${fl.hint ? `<span class="hint">${esc(fl.hint)}</span>` : ''}</label>
+        ${fl.type === 'textarea'
+          ? `<textarea id="f_${fl.name}" data-field="${fl.name}" ${fl.required ? 'required' : ''} placeholder="${esc(fl.placeholder || '')}">${esc(A[fl.name] || '')}</textarea>`
+          : `<input type="text" id="f_${fl.name}" data-field="${fl.name}" ${fl.required ? 'required' : ''} autocomplete="${fl.auto || 'off'}" placeholder="${esc(fl.placeholder || '')}" value="${esc(A[fl.name] || '')}">`}
+      </div>`).join('') + `</div>` + nav({ optional: s.optional });
+  }
+
+  else if (s.kind === 'contact'){
+    html = head(s) + `<p class="sub">We'll review your answers and reply within two business days with whether there's a market for your data.</p>
+      <div class="fields two">
+        <div class="fld"><label for="c_name">Your name</label><input type="text" id="c_name" data-field="name" autocomplete="name" value="${esc(A.name || '')}"></div>
+        <div class="fld"><label for="c_title">Your title</label><input type="text" id="c_title" data-field="title" autocomplete="organization-title" value="${esc(A.title || '')}"></div>
+        <div class="fld"><label for="c_email">Work email</label><input type="email" id="c_email" data-field="email" autocomplete="email" value="${esc(A.email || '')}"></div>
+        <div class="fld"><label for="c_phone">Phone <span class="hint">(optional)</span></label><input type="tel" id="c_phone" data-field="phone" autocomplete="tel" value="${esc(A.phone || '')}"></div>
+      </div>
+      <div class="row" style="margin-top:22px"><h2>Can you sign agreements for the company?</h2><div class="tiles narrow">` +
+        ['Yes','I\'d need approval'].map(o => `<button type="button" class="tile" data-row="signer" data-val="${esc(o)}" aria-pressed="${A.signer === o}"><span>${esc(o)}</span></button>`).join('') +
+      `</div></div>
+      <div class="fld"><label for="c_source">How did you hear about us? <span class="hint">(optional)</span></label><input type="text" id="c_source" data-field="source" value="${esc(A.source || '')}"></div>
+      <div class="hp" aria-hidden="true" style="position:absolute;left:-9999px"><label>Leave empty<input type="text" id="hp" tabindex="-1" autocomplete="off"></label></div>
+      <label class="consent"><input type="checkbox" id="c_consent" ${A.consent ? 'checked' : ''}> I'm authorized to discuss this data on behalf of my company, and DataPair may contact me about it.</label>` +
+      nav({ label: 'Send my answers' });
+  }
+
+  else if (s.kind === 'done'){
+    html = `<div class="done-mark" aria-hidden="true"></div>
+      <h1 id="q" tabindex="-1">Thanks${A.name ? ', ' + esc(A.name.split(' ')[0]) : ''}. We've got it.</h1>
+      <p class="sub">We'll review your answers and reply to <b>${esc(A.email || 'you')}</b> within two business days.</p>
+      <div class="next-step"><h2>Next: sign the agreement</h2>
+        <p>A short agreement lets us start representing your data to buyers. Nothing up front, you pay only if a buyer pays you, and you approve every deal.</p>
+        ${signUrl ? `<a class="btn" href="${esc(signUrl)}">Review &amp; sign the agreement <span aria-hidden="true">→</span></a>` : ''}
+        <p class="later">Prefer to wait? We'll include the link with your results.</p></div>`;
+  }
+
+  $card.innerHTML = html;
+  $card.style.animation = 'none'; void $card.offsetWidth; $card.style.animation = '';
+  const first = $card.querySelector('input[data-field], textarea[data-field], #tools_other');
+  if (first && s.kind !== 'tools') first.focus(); else $card.querySelector('#q')?.focus({ preventScroll: true });
+  window.scrollTo({ top: 0 });
+}
+
+function syncFields(){
+  $card.querySelectorAll('[data-field]').forEach(el => { A[el.dataset.field] = el.value.trim(); });
+  const o = document.getElementById('tools_other'); if (o) A.tools_other = o.value.trim();
+  const c = document.getElementById('c_consent'); if (c) A.consent = c.checked;
+  save();
+}
+function msg(t){ const m = document.getElementById('msg'); if (m) m.textContent = t; }
+let advTimer;
+function autoAdvance(){ clearTimeout(advTimer); advTimer = setTimeout(next, 260); }
+
+function validateAndNext(){
+  const s = flow()[pos];
+  syncFields();
+  if (s.kind === 'fields'){
+    const miss = s.fields.find(fl => fl.required && !A[fl.name]);
+    if (miss){ msg('Please fill in: ' + miss.label + '.'); document.getElementById('f_' + miss.name)?.focus(); return; }
+  }
+  if (s.kind === 'tools' && !(A.tools || []).length && !A.tools_other){ msg('Pick at least one tool, or type yours in the box.'); return; }
+  if (s.kind === 'contact'){ submit(); return; }
+  next();
+}
+
+async function submit(){
+  if (!A.name) return msg('Please add your name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(A.email || '')) return msg('Please add a valid email address.');
+  if (!A.signer) return msg('Please tell us whether you can sign agreements.');
+  if (!A.consent) return msg('Please check the box to confirm.');
+  const btn = $card.querySelector('[data-act="next"]'); btn.disabled = true; btn.firstChild.textContent = 'Sending… ';
+
+  const f = flow(), summary = [];
+  for (const s of f){
+    if (['welcome','done','contact'].includes(s.kind)) continue;
+    if (s.kind === 'tool'){
+      const d = (A.tool_detail || {})[s.tool] || {};
+      summary.push(['Tool: ' + s.tool, `${d.years || '?'} yrs · ${d.volume || '?'} · export: ${d.export || '?'}`]); continue;
+    }
+    if (s.kind === 'tools'){ summary.push(['Tools', [...(A.tools || []), ...(A.tools_other ? [A.tools_other] : [])].join(', ')]); continue; }
+    if (s.kind === 'grid'){ s.rows.forEach(r => summary.push([r.label, A[r.name] || '—'])); continue; }
+    if (s.kind === 'fields'){ s.fields.forEach(fl => summary.push([fl.label, A[fl.name] || '—'])); continue; }
+    const v = A[s.id]; summary.push([s.title, Array.isArray(v) ? v.join(', ') : (v || '—')]);
+  }
+  summary.push(['Title', A.title || '—'], ['Can sign agreements', A.signer], ['Heard about us', A.source || '—']);
+
+  const industry = A.industry === 'Other' ? (A.industry_other || 'Other') : A.industry;
+  const payload = { type:'seller-v2', name:A.name, title:A.title || '', company:A.company, email:A.email, phone:A.phone || '',
+    industry, span:A.history || '', employees:A.employees || '', description:A.does || '',
+    personal:(A.sensitive || []).join(', '), ownership:A.ownership || '', source:A.source || '',
+    consent:'yes', website:document.getElementById('hp')?.value || '', summary, answers:A };
+  try{
+    const r = await fetch('/api/intake', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Your answers could not be sent.');
+    if (j.id && j.token) signUrl = `/sign.html?id=${encodeURIComponent(j.id)}&t=${encodeURIComponent(j.token)}`;
+    try { localStorage.removeItem(KEY); } catch {}
+    pos = flow().length - 1; render();
+  }catch(e){
+    msg(e.message + ' Please try again, or email hello@datapair.ai.');
+    btn.disabled = false; btn.firstChild.textContent = 'Send my answers ';
+  }
+}
+
+$card.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const s = flow()[pos];
+  if (b.dataset.act === 'next'){ s.kind === 'welcome' ? next() : validateAndNext(); return; }
+  if (b.dataset.act === 'back'){ syncFields(); back(); return; }
+  if (b.dataset.act === 'skip'){ syncFields(); next(); return; }
+  if (b.dataset.act === 'restart'){ A = {}; pos = 0; save(); next(); return; }
+
+  if (b.dataset.tk){ // tool detail row
+    A.tool_detail = A.tool_detail || {}; const d = A.tool_detail[s.tool] = A.tool_detail[s.tool] || {};
+    d[b.dataset.tk] = b.dataset.val; save();
+    b.parentElement.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed', t === b));
+    const ready = d.years && d.volume && d.export;
+    $card.querySelector('[data-act="next"]').disabled = !ready;
+    if (ready) autoAdvance();
+    return;
+  }
+  if (b.dataset.row){
+    A[b.dataset.row] = b.dataset.val; save();
+    b.parentElement.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed', t === b));
+    if (s.kind === 'grid'){
+      const ready = s.rows.every(r => A[r.name]);
+      $card.querySelector('[data-act="next"]').disabled = !(ready || s.optional);
+      if (ready) autoAdvance();
+    }
+    return;
+  }
+  if (b.dataset.tool){
+    const t = b.dataset.tool, cur = new Set(A.tools || []);
+    cur.has(t) ? cur.delete(t) : cur.add(t);
+    // keep the order of the master list
+    A.tools = TOOL_GROUPS.flatMap(g => g[1]).filter(x => cur.has(x)); save();
+    b.setAttribute('aria-pressed', cur.has(t)); msg('');
+    return;
+  }
+  if (b.dataset.multi !== undefined){
+    const v = b.dataset.multi; let cur = new Set(A[s.id] || []);
+    if (cur.has(v)) cur.delete(v);
+    else if (s.none && (v === s.none || v === 'Not sure')) cur = new Set([v]);
+    else { cur.add(v); cur.delete(s.none); cur.delete('Not sure'); }
+    A[s.id] = [...cur]; save();
+    $card.querySelectorAll('[data-multi]').forEach(t => t.setAttribute('aria-pressed', cur.has(t.dataset.multi)));
+    $card.querySelector('[data-act="next"]').disabled = !(cur.size || s.optional);
+    return;
+  }
+  if (b.dataset.val !== undefined && s.kind === 'single'){
+    A[s.id] = b.dataset.val;
+    if (s.id === 'country' && b.dataset.val !== 'Other' && !A.location) {} // location asked next regardless
+    save();
+    $card.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed', t === b));
+    autoAdvance();
+  }
+});
+
+$card.addEventListener('input', e => { if (e.target.matches('[data-field], #tools_other')) syncFields(); });
+$card.addEventListener('change', e => { if (e.target.id === 'c_consent') syncFields(); });
+
+document.addEventListener('keydown', e => {
+  const s = flow()[pos];
+  if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON'){
+    e.preventDefault();
+    const n = $card.querySelector('[data-act="next"]'); if (n && !n.disabled) n.click();
+    return;
+  }
+  // letter shortcuts on single / multi questions
+  if (!e.metaKey && !e.ctrlKey && !e.altKey && /^[a-z]$/i.test(e.key) && ['single','multi'].includes(s.kind)
+      && !['INPUT','TEXTAREA'].includes(e.target.tagName)){
+    const i = letters.indexOf(e.key.toUpperCase());
+    const tiles = $card.querySelectorAll('.tile'); if (tiles[i]) tiles[i].click();
+  }
+});
+
+// Location question title follows the country
+const loc = STEPS.find(s => s.id === 'location');
+Object.defineProperty(loc, 'title', { get(){ return A.country === 'United States' ? 'Which state?' : A.country === 'Canada' ? 'Which province?' : 'Which country?'; } });
+Object.defineProperty(loc, 'fields', { get(){ return [{ name:'location', label: A.country === 'United States' ? 'State' : A.country === 'Canada' ? 'Province' : 'Country', type:'text', required:true }]; } });
+
+render();
+})();
+</script>
+</body>
+</html>
