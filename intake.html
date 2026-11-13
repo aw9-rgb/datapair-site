@@ -69,7 +69,7 @@
   .quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 18px}
   .quick span{font-weight:600;font-size:.92rem;margin-right:4px}
   .quick .chip{font-size:.88rem;padding:5px 11px}
-  .sys-head,.sys{display:grid;grid-template-columns:1.25fr 1.25fr .95fr .95fr 1.05fr .9fr 26px;gap:8px;align-items:start}
+  .sys-head,.sys{display:grid;grid-template-columns:1.2fr 1.1fr 1.35fr .95fr 1.05fr .9fr 26px;gap:8px;align-items:start}
   .sys-head{font-size:.8rem;font-weight:700;color:var(--ink-soft);padding:0 12px 6px;text-transform:uppercase;letter-spacing:.04em}
   .sys{background:#fff;border:1.5px solid var(--rule);border-radius:9px;padding:10px 12px;margin:0 0 8px}
   .sys .c{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -83,6 +83,10 @@
   .sys .now input{width:15px;height:15px;accent-color:var(--blue);margin:0}
   .sys .rm{background:none;border:0;font-size:1.4rem;line-height:1;color:var(--ink-soft);cursor:pointer;padding:6px 0;align-self:start}
   .sys .rm:hover{color:var(--err)}
+  .sys .unsure{font-size:.82rem;color:var(--green);font-weight:600}
+  .sys .tipbtn{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--blue);cursor:pointer;text-align:left;font-weight:600}
+  .sys .tip{grid-column:1/-2;font-size:.9rem;color:var(--ink-soft);background:var(--blue-tint);border-radius:6px;padding:8px 10px}
+  .sys .tip[hidden]{display:none}
   .add-row{font:inherit;font-weight:600;color:var(--blue);background:#fff;border:1.5px dashed var(--line);border-radius:9px;padding:12px;width:100%;cursor:pointer}
   .add-row:hover{border-color:var(--blue)}
   .totals{margin:16px 0 0;padding:14px 16px;background:var(--green-tint);border:1.5px solid var(--green-bright);border-radius:9px;color:var(--ink)}
@@ -90,7 +94,9 @@
     .sys-head{display:none}
     .sys{grid-template-columns:1fr 1fr;position:relative;padding:14px}
     .sys .c > label{display:block}
-    .sys .what{grid-column:1/-1}
+    .sys .what,.sys .tip{grid-column:1/-1}
+    .sys .size{grid-column:1/-1}
+    .sys .pair input{max-width:140px}
     .sys .rm{position:absolute;top:6px;right:10px}
     .sys .name{padding-right:22px}
   }
@@ -159,7 +165,7 @@ const TOOL_GROUPS = [  // [group / default 'used for', tools]
   ['Chat & meetings', ['Slack', 'Microsoft Teams', 'Zoom', 'Google Meet']],
   ['Files & documents', ['Google Drive', 'OneDrive / SharePoint', 'Dropbox', 'Box']],
   ['Sales & customers (CRM)', ['Salesforce', 'HubSpot', 'Zoho CRM', 'Pipedrive']],
-  ['Accounting & finance', ['QuickBooks', 'Xero', 'NetSuite', 'Sage', 'SAP']],
+  ['Accounting & finance', ['QuickBooks', 'Xero', 'NetSuite', 'Sage', 'SAP', 'Lacerte', 'UltraTax', 'Drake', 'CCH Axcess']],
   ['Projects & knowledge', ['Asana', 'monday.com', 'Jira', 'ClickUp', 'Notion', 'Confluence']],
   ['Customer support', ['Zendesk', 'Intercom', 'Freshdesk']],
   ['HR & payroll', ['Gusto', 'ADP', 'Rippling', 'BambooHR']],
@@ -208,7 +214,7 @@ const STEPS = [
     options:['Under 10','10–24','25–99','100–499','500+','Not sure'] },
 
   { id:'systems', kind:'systems', eyebrow:'Your systems', optional:true, title:'Your systems and data',
-    sub:'One row per system your business runs on. Rough numbers are fine, and anything you skip can be filled in later. This is the most valuable part of your review.' },
+    sub:'One row per system your business runs on. Rough numbers are fine. Don\'t know a size? Pick "Not sure" and we\'ll help you find it on a quick call.' },
   { id:'language', kind:'single', eyebrow:'Your data', title:'What language are most of your records in?', narrow:true,
     options:['English','Mostly English, some other','Mainly another language'] },
   { id:'linked', kind:'single', eyebrow:'Your data', optional:true, title:'Do your records connect across systems?',
@@ -304,35 +310,89 @@ const COMMON = ['Gmail / Google Workspace','Outlook / Microsoft 365','Slack','Mi
 const QUICK = TOOL_GROUPS.flatMap(([g, list]) => list.map(t => [t, USE_FOR[g] || ''])).filter(([t]) => COMMON.includes(t));
 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ym = v => { if (!v) return ''; const [y, m] = v.split('-'); return m ? `${months[+m - 1]} ${y}` : y; };
+const KEYWORDS = [  // fallback when a typed system isn't in TOOL_GROUPS
+  [/mail|outlook|exchange|inbox/i, 'Email'], [/slack|teams|zoom|meet|chat|phone|call|ringcentral/i, 'Chat & meetings'],
+  [/drive|dropbox|box|sharepoint|server|file|folder|document|smartvault|netdocuments/i, 'Files & documents'],
+  [/crm|salesforce|hubspot|pipedrive|contact/i, 'Sales & customers (CRM)'],
+  [/quickbooks|xero|sage|netsuite|account|book|tax|lacerte|ultratax|drake|cch|invoice|billing/i, 'Accounting & finance'],
+  [/asana|monday|jira|clickup|notion|confluence|karbon|project|task|wiki/i, 'Projects & knowledge'],
+  [/zendesk|intercom|freshdesk|ticket|support|help ?desk/i, 'Customer support'],
+  [/payroll|gusto|adp|paychex|rippling|bamboo|hr\b/i, 'HR & payroll'],
+  [/github|gitlab|bitbucket|figma|autocad|revit|code/i, 'Code & design'],
+];
+function catOf(name){
+  const n = (name || '').trim(); if (!n) return 'Other';
+  const g = TOOL_GROUPS.find(([, list]) => list.some(t => t.toLowerCase() === n.toLowerCase()));
+  if (g) return g[0];
+  const k = KEYWORDS.find(([re]) => re.test(n));
+  return k ? k[1] : 'Industry & operations';
+}
+const UNITS = {
+  'Email': ['mailboxes', 'GB'],
+  'Chat & meetings': ['people using it', 'hours of recordings', 'GB'],
+  'Files & documents': ['GB', 'TB', 'files'],
+  'Sales & customers (CRM)': ['contacts', 'customers', 'GB'],
+  'Accounting & finance': ['transactions / yr', 'invoices / yr', 'returns / yr', 'GB'],
+  'Projects & knowledge': ['projects', 'tasks', 'documents', 'GB'],
+  'Customer support': ['tickets / yr', 'GB'],
+  'HR & payroll': ['employees (all-time)', 'GB'],
+  'Industry & operations': ['jobs / yr', 'records', 'GB'],
+  'Code & design': ['repositories', 'files', 'GB'],
+};
+const NOT_SURE = 'Not sure';
+const unitsFor = (name, cur) => { const u = [...(UNITS[catOf(name)] || ['GB', 'records', 'files'])];
+  if (cur && cur !== NOT_SURE && !u.includes(cur)) u.push(cur); return [...u, NOT_SURE]; };
+const TIPS = {
+  'Email': 'Count every mailbox, including former employees\' if they\'re kept. Microsoft 365: Admin center → Reports → Usage → Mailbox usage shows each mailbox\'s size. Google Workspace: Admin console → Reports → Apps → Gmail.',
+  'Chat & meetings': 'Count the people who use it. Zoom or Teams admin settings show how many hours of recordings are stored.',
+  'Files & documents': 'Right-click the main folder → Properties (Windows) or Get Info (Mac) to see its size and number of files. Cloud drives show "storage used" in the admin or account settings.',
+  'Sales & customers (CRM)': 'Open your contacts or accounts list. The total count usually shows at the top.',
+  'Accounting & finance': 'QuickBooks: Reports → Transaction List by Date, set to last year. The number of rows is your transactions per year. Tax software: count the returns you file in a typical year.',
+  'Projects & knowledge': 'Count the projects in your main list, or the documents in your wiki. Most tools show a total.',
+  'Customer support': 'Your help desk\'s reports show tickets per month. Multiply by 12.',
+  'HR & payroll': 'A rough count of everyone who has ever been on payroll is fine.',
+  'Industry & operations': 'A rough number of jobs, cases, orders or appointments in a typical year is fine.',
+  'Code & design': 'Count the repositories in your GitHub or GitLab organization, or the project files you keep.',
+};
+const tipFor = name => TIPS[catOf(name)] || 'Your best guess is fine. Or pick "Not sure" and we\'ll help you find it on a quick call.';
+const isBytes = u => ['GB', 'TB', 'MB'].includes(u);
+function sizeText(r){
+  if (r.unit === NOT_SURE) return 'size: not sure';
+  if (!r.unit || isBytes(r.unit)) return toGB(r) ? fmtSize(toGB(r)) : '';
+  return (r.size || '').trim() ? `${r.size} ${r.unit}` : '';
+}
 function sysRow(r, i){
   const opt = (v, cur) => `<option ${v === cur ? 'selected' : ''}>${v}</option>`;
-  return `<div class="sys" data-i="${i}">
+  return `<div class="sys" data-i="${i}" data-state="${esc(catOf(r.name) + '|' + (r.unit === NOT_SURE))}">
     <div class="c name"><label>System</label><input type="text" data-k="name" value="${esc(r.name || '')}" placeholder="e.g. QuickBooks"></div>
     <div class="c use"><label>What you use it for</label><input type="text" data-k="use" value="${esc(r.use || '')}" placeholder="e.g. Invoicing"></div>
-    <div class="c size"><label>Approx. size</label><span class="pair"><input type="text" inputmode="decimal" data-k="size" value="${esc(r.size || '')}" placeholder="0">
-      <select data-k="unit">${['GB','TB','MB'].map(u => opt(u, r.unit || 'GB')).join('')}</select></span></div>
+    <div class="c size"><label>How much?</label><span class="pair"><input type="text" inputmode="decimal" data-k="size" value="${esc(r.unit === NOT_SURE ? '' : (r.size || ''))}" placeholder="0" ${r.unit === NOT_SURE ? 'disabled' : ''}>
+      <select data-k="unit" aria-label="Unit">${unitsFor(r.name, r.unit).map(u => opt(u, r.unit || unitsFor(r.name)[0])).join('')}</select></span>
+      ${r.unit === NOT_SURE ? '<span class="unsure">We\'ll help you find it</span>' : `<button type="button" class="tipbtn" data-tip="${i}">How do I find this?</button>`}</div>
     <div class="c from"><label>From</label><input type="month" data-k="from" value="${esc(r.from || '')}" placeholder="YYYY-MM"></div>
     <div class="c to"><label>To</label><input type="month" data-k="to" value="${esc(r.current ? '' : (r.to || ''))}" ${r.current ? 'disabled' : ''} placeholder="YYYY-MM">
       <label class="now"><input type="checkbox" data-k="current" ${r.current ? 'checked' : ''}> Still in use</label></div>
     <div class="c exp"><label>Can you export it?</label><select data-k="export"><option value="">—</option>${['Yes','With help','No','Not sure'].map(v => opt(v, r.export)).join('')}</select></div>
     <button type="button" class="rm" data-rm="${i}" aria-label="Remove ${esc(r.name || 'this system')}">×</button>
     <div class="c what"><label>What's in it? <span class="hint">(optional)</span></label><input type="text" data-k="what" value="${esc(r.what || '')}" placeholder="e.g. 4,800 invoices, client emails since 2018"></div>
+    <div class="tip" id="tip${i}" hidden>${esc(tipFor(r.name))}</div>
   </div>`;
 }
-const toGB = r => { const n = parseFloat(String(r.size || '').replace(/,/g, '')); if (!(n > 0)) return 0; return r.unit === 'TB' ? n * 1000 : r.unit === 'MB' ? n / 1000 : n; };
+const toGB = r => { if (r.unit && !isBytes(r.unit)) return 0; const n = parseFloat(String(r.size || '').replace(/,/g, '')); if (!(n > 0)) return 0; return r.unit === 'TB' ? n * 1000 : r.unit === 'MB' ? n / 1000 : n; };
 function totals(){
   const rows = (A.systems || []).filter(r => (r.name || '').trim());
   const gb = rows.reduce((t, r) => t + toGB(r), 0);
   const now = new Date().toISOString().slice(0, 7);
   const froms = rows.map(r => r.from).filter(Boolean).sort();
   const tos = rows.map(r => r.current ? now : r.to).filter(Boolean).sort();
-  return { count: rows.length, gb, from: froms[0] || '', to: tos[tos.length - 1] || '' };
+  return { count: rows.length, gb, unsure: rows.filter(r => r.unit === NOT_SURE).length, from: froms[0] || '', to: tos[tos.length - 1] || '' };
 }
 const fmtSize = gb => gb >= 1000 ? (gb / 1000).toFixed(gb >= 10000 ? 0 : 1) + ' TB' : gb >= 1 ? Math.round(gb) + ' GB' : gb > 0 ? Math.round(gb * 1000) + ' MB' : '';
 function totalsText(){
   const t = totals(); if (!t.count) return 'Add your systems above. We\'ll total up your data as you go.';
   const parts = [`<b>${t.count}</b> system${t.count === 1 ? '' : 's'}`];
   if (t.gb) parts.push(`about <b>${fmtSize(t.gb)}</b> of data`);
+  if (t.unsure) parts.push(`<b>${t.unsure}</b> size${t.unsure === 1 ? '' : 's'} we'll figure out together`);
   if (t.from) parts.push(`records from <b>${ym(t.from)}</b> to <b>${t.to === new Date().toISOString().slice(0, 7) ? 'today' : ym(t.to)}</b>`);
   return parts.join(' · ');
 }
@@ -341,6 +401,18 @@ function syncSystems(){
     const r = A.systems[+row.dataset.i]; if (!r) return;
     row.querySelectorAll('[data-k]').forEach(el => { r[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim(); });
     const to = row.querySelector('[data-k="to"]'); to.disabled = !!r.current; if (r.current) to.value = '';
+    const cat = catOf(r.name), state = cat + '|' + (r.unit === NOT_SURE);
+    if (row.dataset.state !== state){
+      const sel = row.querySelector('[data-k="unit"]'), list = unitsFor(r.name, r.unit);
+      if (row.dataset.state && row.dataset.state.split('|')[0] !== cat && !(r.size || '').trim() && r.unit !== NOT_SURE) r.unit = list[0];
+      sel.innerHTML = list.map(u => `<option ${u === (r.unit || list[0]) ? 'selected' : ''}>${u}</option>`).join('');
+      r.unit = sel.value;
+      const size = row.querySelector('[data-k="size"]'); size.disabled = r.unit === NOT_SURE; if (size.disabled){ size.value = ''; r.size = ''; }
+      const old = row.querySelector('.unsure, .tipbtn'), i = row.dataset.i;
+      old.outerHTML = r.unit === NOT_SURE ? '<span class="unsure">We\'ll help you find it</span>' : `<button type="button" class="tipbtn" data-tip="${i}">How do I find this?</button>`;
+      row.querySelector('.tip').textContent = tipFor(r.name);
+      row.dataset.state = state;
+    }
   });
   const t = document.getElementById('totals'); if (t) t.innerHTML = totalsText();
   save();
@@ -406,7 +478,7 @@ function render(){
     html = head(s) +
       `<div class="quick"><span>Quick add:</span>` + QUICK.map(([t]) =>
         `<button type="button" class="chip" data-add="${esc(t)}" aria-pressed="${have.has(t.toLowerCase())}">${esc(t)}</button>`).join('') + `</div>
-      <div class="sys-head" aria-hidden="true"><span>System</span><span>What you use it for</span><span>Approx. size</span><span>From</span><span>To</span><span>Can you export it?</span><span></span></div>
+      <div class="sys-head" aria-hidden="true"><span>System</span><span>What you use it for</span><span>How much?</span><span>From</span><span>To</span><span>Can you export it?</span><span></span></div>
       <div id="rows">${A.systems.map(sysRow).join('')}</div>
       <button type="button" class="add-row" data-act="addrow">+ Add a system</button>
       <div class="totals" id="totals">${totalsText()}</div>` +
@@ -529,9 +601,9 @@ async function submit(){
       const rows = (A.systems || []).filter(r => (r.name || '').trim());
       if (!rows.length){ summary.push(['Systems', 'Not filled in yet']); continue; }
       const t = totals();
-      summary.push(['Systems (total)', [`${t.count} systems`, t.gb ? `about ${fmtSize(t.gb)}` : 'size not given',
-        t.from ? `${ym(t.from)} to ${t.to === new Date().toISOString().slice(0, 7) ? 'today' : ym(t.to)}` : 'dates not given'].join(' · ')]);
-      rows.forEach(r => summary.push(['System: ' + r.name, [r.use, toGB(r) ? fmtSize(toGB(r)) : '',
+      summary.push(['Systems (total)', [`${t.count} systems`, t.gb ? `about ${fmtSize(t.gb)} (systems sized in GB)` : 'no GB sizes given', t.unsure ? `${t.unsure} size(s) not sure` : '',
+        t.from ? `${ym(t.from)} to ${t.to === new Date().toISOString().slice(0, 7) ? 'today' : ym(t.to)}` : 'dates not given'].filter(Boolean).join(' · ')]);
+      rows.forEach(r => summary.push(['System: ' + r.name, [r.use, sizeText(r),
         (r.from || r.to || r.current) ? `${ym(r.from) || '?'} – ${r.current ? 'present' : (ym(r.to) || '?')}` : '',
         r.export ? 'export: ' + r.export : '', r.what].filter(Boolean).join(' · ') || '—']));
       continue;
@@ -577,12 +649,13 @@ $card.addEventListener('click', e => {
     const name = b.dataset.add || '';
     if (name && A.systems.some(r => (r.name || '').toLowerCase() === name.toLowerCase())) return;
     const use = (QUICK.find(([t]) => t === name) || [])[1] || '';
-    A.systems.push({ name, use, unit: 'GB', current: !!name }); save(); render();
+    A.systems.push({ name, use, unit: unitsFor(name)[0], current: !!name }); save(); render();
     const rows = $card.querySelectorAll('.sys'), last = rows[rows.length - 1];
     last?.querySelector(name ? '[data-k="size"]' : '[data-k="name"]')?.focus();
     last?.scrollIntoView({ block: 'nearest' });
     return;
   }
+  if (b.dataset.tip !== undefined){ const t = document.getElementById('tip' + b.dataset.tip); if (t) t.hidden = !t.hidden; return; }
   if (b.dataset.rm !== undefined){ syncFields(); A.systems.splice(+b.dataset.rm, 1); save(); render(); return; }
   if (b.dataset.row){
     A[b.dataset.row] = b.dataset.val; save();
