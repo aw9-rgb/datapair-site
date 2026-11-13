@@ -225,8 +225,10 @@ const STEPS = [
 
   { id:'functions', kind:'functions', eyebrow:'Your systems', title:'How does your business handle each of these?',
     sub:'Tap one or more on every line. Most businesses use 5 to 10 tools without thinking of them as "systems", and each one holds data buyers want.' },
+  { id:'past', kind:'past', eyebrow:'Your systems', title:'What did the business use before?',
+    sub:'Old accounts still hold data, even ones you stopped paying for years ago. Think back: past ads, old software, a previous website. Tap anything that applies.' },
   { id:'systems', kind:'systems', eyebrow:'Your systems', optional:true, title:'Roughly how much is in each?',
-    sub:'We added what you told us on the last screen. Add anything we missed. Rough numbers are fine. Don\'t know a size? Pick "Not sure" and we\'ll help you find it on a quick call.' },
+    sub:'We added what you told us. For tools you no longer use, fill in the years you used them. Rough numbers are fine. Don\'t know a size? Pick "Not sure" and we\'ll help you find it on a quick call.' },
   { id:'language', kind:'single', eyebrow:'Your data', title:'What language are most of your records in?', narrow:true,
     options:['English','Mostly English, some other','Mainly another language'] },
   { id:'linked', kind:'single', eyebrow:'Your data', optional:true, title:'Do your records connect across systems?',
@@ -362,9 +364,28 @@ function fnRow(f){
 }
 const fnMissing = () => FUNCS.filter(f => { const cur = (A.fn || {})[f.key] || [];
   return !cur.length || (cur.includes('Something else') && cur.length === 1 && !((A.fnOther || {})[f.key] || '').trim()); });
+const PAST_ADS = {
+  'Real estate & mortgage': ['Zillow', 'Realtor.com', 'Homes.com', 'Redfin'],
+  'Construction & trades': ['Angi / HomeAdvisor', 'Thumbtack', 'Nextdoor'],
+  'Legal': ['Avvo', 'FindLaw', 'Martindale'],
+  'Healthcare': ['Zocdoc', 'Healthgrades'],
+  'Travel & hospitality': ['TripAdvisor', 'Expedia', 'Booking.com'],
+  'Retail & e-commerce': ['Amazon', 'eBay', 'Etsy'],
+};
+const PAST = a => [
+  { h:'Ads, listings & lead sources', use:'Advertising & leads', opts:[...(PAST_ADS[a.industry] || []), 'Google Ads', 'Facebook / Instagram ads', 'Yelp', 'LinkedIn'] },
+  { h:'Older software', use:'', opts:[['QuickBooks Desktop','Accounting & invoicing'], ['Peachtree / Sage 50','Accounting & invoicing'], ['A previous payroll company','HR & payroll'],
+      ['An old CRM (ACT!, GoldMine…)','Sales & customers'], ['A previous email provider','Email'], ['An old phone system or voicemail','Calls']] },
+  { h:'Websites & accounts', use:'Marketing', opts:['A previous website', 'An old domain or blog', 'Old social media accounts'] },
+];
+const NOTHING_PAST = 'Nothing I can think of';
+const pastOpts = () => PAST(A).flatMap(g => g.opts.map(o => Array.isArray(o) ? o : [o, g.use]));
 function systemsFromFunctions(){
   if (!Array.isArray(A.systems)) A.systems = [];
   const want = [];
+  const past = A.past || [];
+  for (const [label, use] of pastOpts()) if (past.includes(label)) want.push([label.replace(/^(A|An) /, '').replace(/^./, c => c.toUpperCase()), use, false, true]);
+  if (past.includes('Something else') && (A.pastOther || '').trim()) want.push([A.pastOther.trim(), '', false, true]);
   for (const f of FUNCS){
     const cur = (A.fn || {})[f.key] || [];
     for (const [label, kind] of fnOpts(f)){
@@ -375,19 +396,20 @@ function systemsFromFunctions(){
   }
   const wanted = new Set(want.map(([n]) => n.toLowerCase()));
   A.systems = A.systems.filter(r => !r.auto || wanted.has((r.name || '').toLowerCase()) || (r.size || '').trim() || r.from);
-  for (const [name, use, outsourced] of want){
+  for (const [name, use, outsourced, old] of want){
     if (A.systems.some(r => (r.name || '').toLowerCase() === name.toLowerCase())) continue;
-    A.systems.push({ name, use, unit: outsourced ? NOT_SURE : unitsFor(name)[0], current: true, auto: true });
+    A.systems.push({ name, use, unit: outsourced ? NOT_SURE : unitsFor(name)[0], current: !old, auto: true });
   }
 }
 
 const KEYWORDS = [  // fallback when a typed system isn't in TOOL_GROUPS
+  [/zillow|realtor\.com|homes\.com|redfin|angi|homeadvisor|thumbtack|nextdoor|avvo|findlaw|martindale|zocdoc|healthgrades|tripadvisor|expedia|booking\.com|yelp|google ads|facebook|instagram|linkedin|amazon|ebay|etsy|\bads?\b/i, 'Ads & lead sources'],
   [/mail|outlook|exchange|inbox/i, 'Email'], [/slack|teams|zoom|meet|chat|phone|call|ringcentral/i, 'Chat & meetings'],
   [/drive|dropbox|box|sharepoint|server|file|folder|document|smartvault|netdocuments/i, 'Files & documents'],
-  [/crm|salesforce|hubspot|pipedrive|contact/i, 'Sales & customers (CRM)'],
+  [/crm|salesforce|hubspot|pipedrive|contact|act!|goldmine|follow up boss|kvcore/i, 'Sales & customers (CRM)'],
   [/lacerte|ultratax|drake|cch|prosystem|tax/i, 'Tax software'],
-  [/website|wordpress|wix|squarespace|social/i, 'Website & social'],
-  [/quickbooks|xero|sage|netsuite|accounting|bookkeep|invoice|billing/i, 'Accounting & finance'],
+  [/website|domain|blog|wordpress|wix|squarespace|social/i, 'Website & social'],
+  [/quickbooks|peachtree|xero|sage|netsuite|accounting|bookkeep|invoice|billing/i, 'Accounting & finance'],
   [/asana|monday|jira|clickup|notion|confluence|karbon|project|task|wiki/i, 'Projects & knowledge'],
   [/zendesk|intercom|freshdesk|ticket|support|help ?desk/i, 'Customer support'],
   [/payroll|gusto|adp|paychex|rippling|bamboo|hr\b/i, 'HR & payroll'],
@@ -417,6 +439,7 @@ const UNITS = {
   'Marketing': ['contacts on list', 'campaigns sent', 'GB'],
   'Website & social': ['pages / posts', 'followers', 'GB'],
   'Tax software': ['returns / yr', 'clients', 'GB'],
+  'Ads & lead sources': ['leads', 'orders', 'campaigns', 'GB'],
 };
 const NOT_SURE = 'Not sure';
 const unitsFor = (name, cur) => { const u = [...(UNITS[catOf(name)] || ['GB', 'records', 'files'])];
@@ -431,6 +454,7 @@ const TIPS = {
   'Customer support': 'Your help desk\'s reports show tickets per month. Multiply by 12.',
   'HR & payroll': 'A rough count of everyone who has ever been on payroll is fine.',
   'Industry & operations': 'A rough number of jobs, cases, orders or appointments in a typical year is fine.',
+  'Ads & lead sources': 'If you can still log in, the account dashboard shows total leads or campaigns. If not, a rough number of leads per month times the months you ran it is fine.',
   'Tax software': 'Count the returns you file in a typical year. Your software\'s client list shows the total number of clients.',
   'Website & social': 'Count the pages or blog posts on your site, and the posts on your main social account. A rough number is fine.',
   'Marketing': 'Your email tool\'s Audience or Contacts page shows how many people are on your list, and its Campaigns page shows how many you\'ve sent.',
@@ -506,7 +530,7 @@ function canProceed(s){
     case 'single': return !!A[s.id];
     case 'multi': return (A[s.id] || []).length > 0;
     case 'grid': return s.rows.every(r => A[r.name]);
-    case 'functions': return true;
+    case 'functions': case 'past': return true;
     case 'systems': return (A.systems || []).some(r => (r.name || '').trim());
     case 'fields': { const req = s.fields.filter(f => f.required);
       return req.length ? req.every(f => (A[f.name] || '').trim()) : s.fields.some(f => (A[f.name] || '').trim()); }
@@ -557,6 +581,15 @@ function render(){
 
   else if (s.kind === 'functions'){
     html = head(s) + FUNCS.map(fnRow).join('') + nav({ canNext: true });
+  }
+
+  else if (s.kind === 'past'){
+    const cur = A.past || [];
+    const chip = l => `<button type="button" class="chip ${l === NOTHING_PAST || l === 'Something else' ? 'alt' : ''}" data-past="${esc(l)}" aria-pressed="${cur.includes(l)}">${esc(l)}</button>`;
+    html = head(s) + PAST(A).map(g => `<div class="row fn"><h2>${esc(g.h)}</h2><div class="chips">${g.opts.map(o => chip(Array.isArray(o) ? o[0] : o)).join('')}</div></div>`).join('') +
+      `<div class="row fn" id="past_more"><h2>Anything else?</h2><div class="chips">${chip('Something else')}${chip(NOTHING_PAST)}</div>
+        <input type="text" class="fn-other" id="past_other" placeholder="e.g. a booking app we used until 2019" value="${esc(A.pastOther || '')}" ${cur.includes('Something else') ? '' : 'hidden'}></div>` +
+      nav({ canNext: true });
   }
 
   else if (s.kind === 'systems'){
@@ -654,6 +687,7 @@ async function sendLink(){
 }
 
 function syncFields(){
+  const po = document.getElementById('past_other'); if (po) A.pastOther = po.value.trim();
   $card.querySelectorAll('[data-fn-other]').forEach(el => { (A.fnOther ||= {})[el.dataset.fnOther] = el.value.trim(); });
   $card.querySelectorAll('[data-field]').forEach(el => { A[el.dataset.field] = el.value.trim(); });
   if ($card.querySelector('.sys')) syncSystems();
@@ -678,6 +712,12 @@ function validateAndNext(){
       document.getElementById('fn_' + miss[0].key)?.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
     systemsFromFunctions(); save();
   }
+  if (s.kind === 'past'){
+    const cur = A.past || [];
+    if (!cur.length || (cur.length === 1 && cur[0] === 'Something else' && !(A.pastOther || '').trim())){
+      msg(cur.length ? 'Please tell us what else you used.' : 'Please tap anything you used before, or "Nothing I can think of".'); return; }
+    systemsFromFunctions(); save();
+  }
   if (s.kind === 'contact'){ submit(); return; }
   next();
 }
@@ -695,6 +735,10 @@ async function submit(){
     if (s.kind === 'functions'){
       FUNCS.forEach(f => { const cur = (A.fn || {})[f.key] || [], o = ((A.fnOther || {})[f.key] || '').trim();
         summary.push([f.q, cur.map(v => v === 'Something else' && o ? o : v).join(', ') || '—']); });
+      continue;
+    }
+    if (s.kind === 'past'){
+      summary.push(['Used in the past', (A.past || []).map(v => v === 'Something else' && A.pastOther ? A.pastOther : v).join(', ') || '—']);
       continue;
     }
     if (s.kind === 'systems'){
@@ -755,6 +799,15 @@ $card.addEventListener('click', e => {
     last?.scrollIntoView({ block: 'nearest' });
     return;
   }
+  if (b.dataset.past !== undefined){
+    const v = b.dataset.past; let cur = new Set(A.past || []);
+    if (cur.has(v)) cur.delete(v); else if (v === NOTHING_PAST) cur = new Set([v]); else { cur.add(v); cur.delete(NOTHING_PAST); }
+    A.past = [...cur]; save();
+    $card.querySelectorAll('[data-past]').forEach(c => c.setAttribute('aria-pressed', cur.has(c.dataset.past)));
+    const o = document.getElementById('past_other'); o.hidden = !cur.has('Something else'); if (!o.hidden && v === 'Something else') o.focus();
+    if (cur.size) msg('');
+    return;
+  }
   if (b.dataset.fn){
     const f = FUNCS.find(x => x.key === b.dataset.fn), opts = fnOpts(f), v = b.dataset.opt;
     const kind = (opts.find(([l]) => l === v) || [])[1];
@@ -801,7 +854,7 @@ $card.addEventListener('click', e => {
   }
 });
 
-$card.addEventListener('input', e => { if (e.target.matches('[data-field], [data-fn-other]')) syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
+$card.addEventListener('input', e => { if (e.target.matches('[data-field], [data-fn-other], #past_other')) syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
 $card.addEventListener('change', e => { if (e.target.id === 'c_consent') syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
 for (const ev of ['click', 'input', 'change']) $card.addEventListener(ev, () => setTimeout(updateNext));
 
