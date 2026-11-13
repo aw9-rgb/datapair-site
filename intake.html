@@ -378,7 +378,7 @@ const PAST = a => [
       ['An old CRM (ACT!, GoldMine…)','Sales & customers'], ['A previous email provider','Email'], ['An old phone system or voicemail','Calls']] },
   { h:'Websites & accounts', use:'Marketing', opts:['A previous website', 'An old domain or blog', 'Old social media accounts'] },
 ];
-const NOTHING_PAST = 'Nothing I can think of';
+const NOTHING_PAST = 'Nothing (else) I can think of';
 const pastOpts = () => PAST(A).flatMap(g => g.opts.map(o => Array.isArray(o) ? o : [o, g.use]));
 function systemsFromFunctions(){
   if (!Array.isArray(A.systems)) A.systems = [];
@@ -715,7 +715,7 @@ function validateAndNext(){
   if (s.kind === 'past'){
     const cur = A.past || [];
     if (!cur.length || (cur.length === 1 && cur[0] === 'Something else' && !(A.pastOther || '').trim())){
-      msg(cur.length ? 'Please tell us what else you used.' : 'Please tap anything you used before, or "Nothing I can think of".'); return; }
+      msg(cur.length ? 'Please tell us what else you used.' : 'Please tap anything you used before, or "Nothing (else) I can think of".'); return; }
     systemsFromFunctions(); save();
   }
   if (s.kind === 'contact'){ submit(); return; }
@@ -801,7 +801,7 @@ $card.addEventListener('click', e => {
   }
   if (b.dataset.past !== undefined){
     const v = b.dataset.past; let cur = new Set(A.past || []);
-    if (cur.has(v)) cur.delete(v); else if (v === NOTHING_PAST) cur = new Set([v]); else { cur.add(v); cur.delete(NOTHING_PAST); }
+    if (cur.has(v)) cur.delete(v); else cur.add(v);
     A.past = [...cur]; save();
     $card.querySelectorAll('[data-past]').forEach(c => c.setAttribute('aria-pressed', cur.has(c.dataset.past)));
     const o = document.getElementById('past_other'); o.hidden = !cur.has('Something else'); if (!o.hidden && v === 'Something else') o.focus();
