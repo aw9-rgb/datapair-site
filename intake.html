@@ -87,6 +87,16 @@
   .sys .tipbtn{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--blue);cursor:pointer;text-align:left;font-weight:600}
   .sys .tip{grid-column:1/-2;font-size:.9rem;color:var(--ink-soft);background:var(--blue-tint);border-radius:6px;padding:8px 10px}
   .sys .tip[hidden]{display:none}
+  .fn{padding:16px 0;border-top:1px solid var(--rule);margin:0}
+  .fn h2{margin:0 0 4px}
+  .fn .fn-hint{color:var(--ink-soft);font-size:.92rem;margin:0 0 10px}
+  .fn .chips{margin-top:8px}
+  .fn .chip{font-size:.95rem;padding:7px 13px}
+  .fn .chip.alt{border-style:dashed}
+  .fn .chip.alt[aria-pressed="true"]{border-style:solid}
+  .fn input.fn-other{margin-top:10px;max-width:420px}
+  .fn.missing h2{color:var(--err)}
+  .fn.missing h2::after{content:" · please pick one";font-weight:600;font-size:.88rem}
   .add-row{font:inherit;font-weight:600;color:var(--blue);background:#fff;border:1.5px dashed var(--line);border-radius:9px;padding:12px;width:100%;cursor:pointer}
   .add-row:hover{border-color:var(--blue)}
   .totals{margin:16px 0 0;padding:14px 16px;background:var(--green-tint);border:1.5px solid var(--green-bright);border-radius:9px;color:var(--ink)}
@@ -165,7 +175,7 @@ const TOOL_GROUPS = [  // [group / default 'used for', tools]
   ['Chat & meetings', ['Slack', 'Microsoft Teams', 'Zoom', 'Google Meet']],
   ['Files & documents', ['Google Drive', 'OneDrive / SharePoint', 'Dropbox', 'Box']],
   ['Sales & customers (CRM)', ['Salesforce', 'HubSpot', 'Zoho CRM', 'Pipedrive']],
-  ['Accounting & finance', ['QuickBooks', 'Xero', 'NetSuite', 'Sage', 'SAP', 'Lacerte', 'UltraTax', 'Drake', 'CCH Axcess']],
+  ['Accounting & finance', ['QuickBooks', 'Xero', 'NetSuite', 'Sage', 'SAP']],
   ['Projects & knowledge', ['Asana', 'monday.com', 'Jira', 'ClickUp', 'Notion', 'Confluence']],
   ['Customer support', ['Zendesk', 'Intercom', 'Freshdesk']],
   ['HR & payroll', ['Gusto', 'ADP', 'Rippling', 'BambooHR']],
@@ -213,8 +223,10 @@ const STEPS = [
     sub:'Count every employee mailbox, current and former, if they\'re still kept.', narrow:true,
     options:['Under 10','10–24','25–99','100–499','500+','Not sure'] },
 
-  { id:'systems', kind:'systems', eyebrow:'Your systems', optional:true, title:'Your systems and data',
-    sub:'One row per system your business runs on. Rough numbers are fine. Don\'t know a size? Pick "Not sure" and we\'ll help you find it on a quick call.' },
+  { id:'functions', kind:'functions', eyebrow:'Your systems', title:'How does your business handle each of these?',
+    sub:'Tap one or more on every line. Most businesses use 5 to 10 tools without thinking of them as "systems", and each one holds data buyers want.' },
+  { id:'systems', kind:'systems', eyebrow:'Your systems', optional:true, title:'Roughly how much is in each?',
+    sub:'We added what you told us on the last screen. Add anything we missed. Rough numbers are fine. Don\'t know a size? Pick "Not sure" and we\'ll help you find it on a quick call.' },
   { id:'language', kind:'single', eyebrow:'Your data', title:'What language are most of your records in?', narrow:true,
     options:['English','Mostly English, some other','Mainly another language'] },
   { id:'linked', kind:'single', eyebrow:'Your data', optional:true, title:'Do your records connect across systems?',
@@ -310,15 +322,79 @@ const COMMON = ['Gmail / Google Workspace','Outlook / Microsoft 365','Slack','Mi
 const QUICK = TOOL_GROUPS.flatMap(([g, list]) => list.map(t => [t, USE_FOR[g] || ''])).filter(([t]) => COMMON.includes(t));
 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ym = v => { if (!v) return ''; const [y, m] = v.split('-'); return m ? `${months[+m - 1]} ${y}` : y; };
+// "How do you handle…" rows. opts: tool names (become systems rows), or [label, kind]
+// kind: 'none' = exclusive "we don't", 'other' = free text, or a string = systems row name to add
+const WORK_TOOLS = {
+  'Accounting & tax': ['Lacerte', 'UltraTax', 'Drake', 'CCH Axcess', 'ProSystem fx'],
+  'Legal': ['Clio', 'MyCase', 'PracticePanther', 'NetDocuments'],
+  'Healthcare': ['Epic', 'athenahealth', 'eClinicalWorks', 'Practice management / EHR'],
+  'Construction & trades': ['ServiceTitan', 'Procore', 'Jobber', 'Housecall Pro'],
+  'Retail & e-commerce': ['Shopify', 'Square', 'Clover', 'Amazon Seller Central'],
+  'Real estate & mortgage': ['Encompass', 'Follow Up Boss', 'kvCORE', 'Dotloop'],
+  'Software & tech': ['GitHub', 'GitLab', 'Jira'],
+  'Travel & hospitality': ['Booking / reservation system', 'Sabre', 'Amadeus'],
+  'Logistics & transportation': ['Dispatch / TMS software', 'Samsara', 'Fleet tracking'],
+};
+const FUNCS = [
+  { key:'email', q:'Email', use:'Email', opts:['Outlook / Microsoft 365','Gmail / Google Workspace','Zoho Mail',['Something else','other']] },
+  { key:'payroll', q:'Paying employees (payroll)', use:'HR & payroll',
+    opts:['ADP','Gusto','Paychex','QuickBooks Payroll','Rippling',['An outside company does it','Payroll (outside provider)'],['Something else','other'],['No employees','none']] },
+  { key:'books', q:'Bookkeeping, invoicing & bills', use:'Accounting & invoicing',
+    opts:['QuickBooks','Xero','Sage','FreshBooks',['Excel / spreadsheets','Spreadsheets (bookkeeping)'],['Our accountant does it','Bookkeeping (outside accountant)'],['Something else','other']] },
+  { key:'customers', q:'Your customer or client list', use:'Sales & customers',
+    opts:['Salesforce','HubSpot','Zoho CRM',['In email or spreadsheets','Spreadsheets (customer list)'],['Something else','other'],['We don\'t keep one','none']] },
+  { key:'marketing', q:'Marketing', hint:'Newsletters, a website, social media, ads.', use:'Marketing',
+    opts:['Mailchimp','Constant Contact',['Website','Website'],['Social media','Social media accounts'],['An agency does it','Marketing (outside agency)'],['Something else','other'],['We don\'t do marketing','none']] },
+  { key:'files', q:'Where your documents and files live', use:'Documents & files',
+    opts:['Google Drive','OneDrive / SharePoint','Dropbox',['A computer or server in the office','Office server / computers'],['Something else','other']] },
+  { key:'comms', q:'Phone calls, texts & team chat', use:'Team chat & calls',
+    opts:['Microsoft Teams','Slack','Zoom','RingCentral','WhatsApp',['Something else','other'],['None of these','none']] },
+  { key:'work', q:'The software you do the actual work in', hint:'Job, case or project tracking, scheduling, point of sale, or software made for your industry.', use:'Operations',
+    opts:a => [...(WORK_TOOLS[a.industry] || ['Scheduling / booking system','Job or project tracking','Point of sale']),['Something else','other'],['Nothing specific','none']] },
+];
+const fnOpts = f => (typeof f.opts === 'function' ? f.opts(A) : f.opts).map(o => Array.isArray(o) ? o : [o, o]);
+function fnRow(f){
+  const cur = (A.fn || {})[f.key] || [], other = (A.fnOther || {})[f.key] || '';
+  return `<div class="row fn" id="fn_${f.key}"><h2>${esc(f.q)}</h2>${f.hint ? `<p class="fn-hint">${esc(f.hint)}</p>` : ''}
+    <div class="chips" role="group" aria-label="${esc(f.q)}">${fnOpts(f).map(([label, kind]) =>
+      `<button type="button" class="chip ${kind === 'none' || kind === 'other' || kind !== label ? 'alt' : ''}" data-fn="${f.key}" data-opt="${esc(label)}" aria-pressed="${cur.includes(label)}">${esc(label)}</button>`).join('')}</div>
+    <input type="text" class="fn-other" data-fn-other="${f.key}" placeholder="Which one?" value="${esc(other)}" ${cur.includes('Something else') ? '' : 'hidden'}></div>`;
+}
+const fnMissing = () => FUNCS.filter(f => { const cur = (A.fn || {})[f.key] || [];
+  return !cur.length || (cur.includes('Something else') && cur.length === 1 && !((A.fnOther || {})[f.key] || '').trim()); });
+function systemsFromFunctions(){
+  if (!Array.isArray(A.systems)) A.systems = [];
+  const want = [];
+  for (const f of FUNCS){
+    const cur = (A.fn || {})[f.key] || [];
+    for (const [label, kind] of fnOpts(f)){
+      if (!cur.includes(label) || kind === 'none') continue;
+      const name = kind === 'other' ? ((A.fnOther || {})[f.key] || '').trim() : kind;
+      if (name) want.push([name, f.use, /outside|agency|accountant/i.test(label)]);
+    }
+  }
+  const wanted = new Set(want.map(([n]) => n.toLowerCase()));
+  A.systems = A.systems.filter(r => !r.auto || wanted.has((r.name || '').toLowerCase()) || (r.size || '').trim() || r.from);
+  for (const [name, use, outsourced] of want){
+    if (A.systems.some(r => (r.name || '').toLowerCase() === name.toLowerCase())) continue;
+    A.systems.push({ name, use, unit: outsourced ? NOT_SURE : unitsFor(name)[0], current: true, auto: true });
+  }
+}
+
 const KEYWORDS = [  // fallback when a typed system isn't in TOOL_GROUPS
   [/mail|outlook|exchange|inbox/i, 'Email'], [/slack|teams|zoom|meet|chat|phone|call|ringcentral/i, 'Chat & meetings'],
   [/drive|dropbox|box|sharepoint|server|file|folder|document|smartvault|netdocuments/i, 'Files & documents'],
   [/crm|salesforce|hubspot|pipedrive|contact/i, 'Sales & customers (CRM)'],
-  [/quickbooks|xero|sage|netsuite|account|book|tax|lacerte|ultratax|drake|cch|invoice|billing/i, 'Accounting & finance'],
+  [/lacerte|ultratax|drake|cch|prosystem|tax/i, 'Tax software'],
+  [/website|wordpress|wix|squarespace|social/i, 'Website & social'],
+  [/quickbooks|xero|sage|netsuite|accounting|bookkeep|invoice|billing/i, 'Accounting & finance'],
   [/asana|monday|jira|clickup|notion|confluence|karbon|project|task|wiki/i, 'Projects & knowledge'],
   [/zendesk|intercom|freshdesk|ticket|support|help ?desk/i, 'Customer support'],
   [/payroll|gusto|adp|paychex|rippling|bamboo|hr\b/i, 'HR & payroll'],
+  [/whatsapp/i, 'Chat & meetings'],
   [/github|gitlab|bitbucket|figma|autocad|revit|code/i, 'Code & design'],
+  [/mailchimp|constant contact|marketing|newsletter|agency/i, 'Marketing'],
+  [/spreadsheet|excel|server|computer/i, 'Files & documents'],
 ];
 function catOf(name){
   const n = (name || '').trim(); if (!n) return 'Other';
@@ -338,6 +414,9 @@ const UNITS = {
   'HR & payroll': ['employees (all-time)', 'GB'],
   'Industry & operations': ['jobs / yr', 'records', 'GB'],
   'Code & design': ['repositories', 'files', 'GB'],
+  'Marketing': ['contacts on list', 'campaigns sent', 'GB'],
+  'Website & social': ['pages / posts', 'followers', 'GB'],
+  'Tax software': ['returns / yr', 'clients', 'GB'],
 };
 const NOT_SURE = 'Not sure';
 const unitsFor = (name, cur) => { const u = [...(UNITS[catOf(name)] || ['GB', 'records', 'files'])];
@@ -352,6 +431,9 @@ const TIPS = {
   'Customer support': 'Your help desk\'s reports show tickets per month. Multiply by 12.',
   'HR & payroll': 'A rough count of everyone who has ever been on payroll is fine.',
   'Industry & operations': 'A rough number of jobs, cases, orders or appointments in a typical year is fine.',
+  'Tax software': 'Count the returns you file in a typical year. Your software\'s client list shows the total number of clients.',
+  'Website & social': 'Count the pages or blog posts on your site, and the posts on your main social account. A rough number is fine.',
+  'Marketing': 'Your email tool\'s Audience or Contacts page shows how many people are on your list, and its Campaigns page shows how many you\'ve sent.',
   'Code & design': 'Count the repositories in your GitHub or GitLab organization, or the project files you keep.',
 };
 const tipFor = name => TIPS[catOf(name)] || 'Your best guess is fine. Or pick "Not sure" and we\'ll help you find it on a quick call.';
@@ -424,6 +506,7 @@ function canProceed(s){
     case 'single': return !!A[s.id];
     case 'multi': return (A[s.id] || []).length > 0;
     case 'grid': return s.rows.every(r => A[r.name]);
+    case 'functions': return true;
     case 'systems': return (A.systems || []).some(r => (r.name || '').trim());
     case 'fields': { const req = s.fields.filter(f => f.required);
       return req.length ? req.every(f => (A[f.name] || '').trim()) : s.fields.some(f => (A[f.name] || '').trim()); }
@@ -470,6 +553,10 @@ function render(){
       optList(s.options).map(([v], i) => `<button type="button" class="tile" data-multi="${esc(v)}" aria-pressed="${cur.includes(v)}">
         <span class="k">${letters[i] || ''}</span><span>${esc(v)}</span></button>`).join('') +
       `</div>` + nav({ canNext: canProceed(s), optional: s.optional });
+  }
+
+  else if (s.kind === 'functions'){
+    html = head(s) + FUNCS.map(fnRow).join('') + nav({ canNext: true });
   }
 
   else if (s.kind === 'systems'){
@@ -567,6 +654,7 @@ async function sendLink(){
 }
 
 function syncFields(){
+  $card.querySelectorAll('[data-fn-other]').forEach(el => { (A.fnOther ||= {})[el.dataset.fnOther] = el.value.trim(); });
   $card.querySelectorAll('[data-field]').forEach(el => { A[el.dataset.field] = el.value.trim(); });
   if ($card.querySelector('.sys')) syncSystems();
   const c = document.getElementById('c_consent'); if (c) A.consent = c.checked;
@@ -583,6 +671,13 @@ function validateAndNext(){
     const miss = s.fields.find(fl => fl.required && !A[fl.name]);
     if (miss){ msg('Please fill in: ' + miss.label + '.'); document.getElementById('f_' + miss.name)?.focus(); return; }
   }
+  if (s.kind === 'functions'){
+    const miss = fnMissing();
+    $card.querySelectorAll('.fn').forEach(el => el.classList.toggle('missing', miss.some(f => 'fn_' + f.key === el.id)));
+    if (miss.length){ msg(`Please answer the ${miss.length === 1 ? 'line' : miss.length + ' lines'} marked in red. Your best guess is fine.`);
+      document.getElementById('fn_' + miss[0].key)?.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
+    systemsFromFunctions(); save();
+  }
   if (s.kind === 'contact'){ submit(); return; }
   next();
 }
@@ -597,6 +692,11 @@ async function submit(){
   const f = flow(), summary = [];
   for (const s of f){
     if (['welcome','done','contact'].includes(s.kind)) continue;
+    if (s.kind === 'functions'){
+      FUNCS.forEach(f => { const cur = (A.fn || {})[f.key] || [], o = ((A.fnOther || {})[f.key] || '').trim();
+        summary.push([f.q, cur.map(v => v === 'Something else' && o ? o : v).join(', ') || '—']); });
+      continue;
+    }
     if (s.kind === 'systems'){
       const rows = (A.systems || []).filter(r => (r.name || '').trim());
       if (!rows.length){ summary.push(['Systems', 'Not filled in yet']); continue; }
@@ -655,6 +755,21 @@ $card.addEventListener('click', e => {
     last?.scrollIntoView({ block: 'nearest' });
     return;
   }
+  if (b.dataset.fn){
+    const f = FUNCS.find(x => x.key === b.dataset.fn), opts = fnOpts(f), v = b.dataset.opt;
+    const kind = (opts.find(([l]) => l === v) || [])[1];
+    const fn = (A.fn ||= {}); let cur = new Set(fn[f.key] || []);
+    if (cur.has(v)) cur.delete(v);
+    else if (kind === 'none') cur = new Set([v]);
+    else { cur.add(v); opts.filter(([, k]) => k === 'none').forEach(([l]) => cur.delete(l)); }
+    fn[f.key] = [...cur]; save();
+    const row = document.getElementById('fn_' + f.key);
+    row.querySelectorAll('[data-opt]').forEach(c => c.setAttribute('aria-pressed', cur.has(c.dataset.opt)));
+    const o = row.querySelector('.fn-other'); o.hidden = !cur.has('Something else'); if (!o.hidden && v === 'Something else') o.focus();
+    if (cur.size) row.classList.remove('missing');
+    if (!fnMissing().length) msg('');
+    return;
+  }
   if (b.dataset.tip !== undefined){ const t = document.getElementById('tip' + b.dataset.tip); if (t) t.hidden = !t.hidden; return; }
   if (b.dataset.rm !== undefined){ syncFields(); A.systems.splice(+b.dataset.rm, 1); save(); render(); return; }
   if (b.dataset.row){
@@ -686,7 +801,7 @@ $card.addEventListener('click', e => {
   }
 });
 
-$card.addEventListener('input', e => { if (e.target.matches('[data-field]')) syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
+$card.addEventListener('input', e => { if (e.target.matches('[data-field], [data-fn-other]')) syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
 $card.addEventListener('change', e => { if (e.target.id === 'c_consent') syncFields(); else if (e.target.closest('.sys')) syncSystems(); });
 for (const ev of ['click', 'input', 'change']) $card.addEventListener(ev, () => setTimeout(updateNext));
 
